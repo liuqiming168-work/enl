@@ -1,0 +1,10 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Server logs
+*.log
+nohup.out
+
+# Backup files
+*.bak
