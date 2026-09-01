@@ -49,8 +49,8 @@ const units=[
  {id:'Unit 1',title:'Making friends',subtitle:'问候、介绍与友谊',color:'coral',progress:36,parts:[{id:'Part A',title:'Hello!',desc:'问候新朋友，介绍自己的名字',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'How can we be a good friend?',desc:'用 listen、help、share 交朋友',lessons:['Let\'s talk','Let\'s chant','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作交友思维导图，读 Zoom 和 Zip 的故事',lessons:['Project','角色跟读','Self-check']}]},
  {id:'Unit 2',title:'Different families',subtitle:'家庭成员与不同的家庭',color:'blue',progress:18,parts:[{id:'Part A',title:'Who lives with you?',desc:'认识家庭成员并介绍家人',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'Different families',desc:'用 This is my... 介绍大小不同的家庭',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作 family tree，读小家庭和大家庭',lessons:['Make a family tree','角色跟读','Self-check']}]},
  {id:'Unit 3',title:'Our animal friends',subtitle:'宠物、野生动物与特征',color:'green',progress:8,parts:[{id:'Part A',title:'What pets do you know?',desc:'询问宠物并表达 I like...',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'What wild animals do you know?',desc:'认识 fox、panda、lion 等野生动物',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作动物图画书，读鲸鱼的故事',lessons:['Make an animal picture book','角色跟读','Self-check']}]},
- {id:'Unit 4',title:'Plants around us',subtitle:'水果、植物与爱护花园',color:'coral',progress:4,parts:[{id:'Part A',title:'What do we get from plants?',desc:'认识 apples、bananas、grapes 和 oranges',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'How can we help plants?',desc:'用 water、plant、grow 谈论照顾植物',lessons:['Let\'s talk','Let\'s learn','Letters and sounds']},{id:'Part C',title:'Project & Reading time',desc:'记录植物观察，分享我们的绿色行动',lessons:['Plant project','角色跟读','Self-check']}]},
- {id:'Unit 5',title:'The colourful world',subtitle:'待补充教材内容',color:'blue',progress:0,parts:[{id:'Part A',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Project','角色跟读','Self-check']}]},
+ {id:'Unit 4',title:'Plants around us',subtitle:'水果、植物与爱护花园',color:'coral',progress:28,parts:[{id:'Part A',title:'What do we get from plants?',desc:'认识 apples、bananas、grapes 和 oranges',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'How can we help plants?',desc:'用 water、plant、grow 谈论照顾花园',lessons:['Let\'s talk','Let\'s learn','Letters and sounds']},{id:'Part C',title:'Project & Reading time',desc:'制作纸花园，读苹果树从种子到结果的故事',lessons:['Make a paper garden','角色跟读','Self-check']}]},
+ {id:'Unit 5',title:'The colourful world',subtitle:'颜色、标识与多彩自然',color:'blue',progress:12,parts:[{id:'Part A',title:'What colours do you see?',desc:'认识 red、pink、green、orange 等颜色',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'How do colours help us?',desc:'用颜色表达喜好，读懂颜色标识',lessons:['Let\'s talk','Colour and say','Listen and do']},{id:'Part C',title:'Project & Reading time',desc:'制作 colour flip book，阅读向日葵的成长故事',lessons:['Make a colour flip book','角色跟读','Self-check']}]},
  {id:'Unit 6',title:'Useful numbers',subtitle:'待补充教材内容',color:'green',progress:0,parts:[{id:'Part A',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Project','角色跟读','Self-check']}]},
  {id:'Revision',title:'Being a good guest',subtitle:'待补充复习内容',color:'yellow',progress:0,parts:[{id:'Task 1',title:'内容待补充',desc:'收到课本页面后更新',lessons:['听力任务','对话任务','词汇闯关']},{id:'Task 2',title:'内容待补充',desc:'收到课本页面后更新',lessons:['情景选择','配对任务','综合小测']},{id:'Task 3',title:'内容待补充',desc:'收到课本页面后更新',lessons:['故事排序','口语任务','复习闯关']}]}
 ];
@@ -109,6 +109,19 @@ const unitQuizSets={
     {type:'单元小测',prompt:'We can ___ the flowers.',hint:'我们可以给花浇水。',audio:'We can water the flowers.',options:['water','share','listen','play'],answer:0},
     {type:'单元小测',prompt:'Bananas are ___ .',hint:'香蕉是长的。',audio:'Bananas are long.',options:['long','small','fast','big'],answer:0},
     {type:'单元小测',prompt:'Trees grow and give us ___ .',hint:'树木给我们新鲜空气。',audio:'Trees grow and give us fresh air.',options:['fresh air','cousins','pets','numbers'],answer:0}
+  ]},
+  4:{listen:[
+    {type:'颜色词汇',prompt:'The sun is ___ .',hint:'太阳是橙色的。',audio:'The sun is orange.',options:['orange','green','red','white'],answer:0},
+    {type:'颜色词汇',prompt:'Snow is ___ .',hint:'雪是白色的。',audio:'Snow is white.',options:['white','black','pink','brown'],answer:0},
+    {type:'颜色混合',prompt:'Blue + red = ___ .',hint:'蓝色和红色混合会变成紫色。',audio:'Blue and red make purple.',options:['purple','green','orange','yellow'],answer:0}
+  ],speak:[
+    {type:'颜色小剧场',prompt:'What colour is it?',phonetic:'/wɒt ˈkʌlə ɪz ɪt/',hint:'指着身边的物品问问颜色。',audio:'What colour is it?',options:['它是什么颜色？','你喜欢苹果吗？','这是谁的家人？','我们可以浇水。'],answer:0},
+    {type:'颜色小剧场',prompt:'I like red and pink.',phonetic:'/aɪ laɪk red ænd pɪŋk/',hint:'说出你喜欢的颜色。',audio:'I like red and pink.',options:['我喜欢红色和粉色。','我喜欢大象和狮子。','我有红色的花。','天空是蓝色的。'],answer:0},
+    {type:'自然阅读',prompt:'I am a sunflower.',phonetic:'/aɪ æm ə ˈsʌnˌflaʊə/',hint:'跟着向日葵故事读一读。',audio:'I am a sunflower.',options:['我是一朵向日葵。','我是一棵苹果树。','我是一只蜜蜂。','我是一片蓝色的大海。'],answer:0}
+  ],quiz:[
+    {type:'单元小测',prompt:'It\'s green. Green can say “___”.',hint:'绿色标识表示可以通行。',audio:'It is green. Green can say Go.',options:['Go','No','Be careful','Use again'],answer:0},
+    {type:'单元小测',prompt:'It\'s blue. Blue can say “___”.',hint:'蓝色标识表示可以再次使用。',audio:'It is blue. Blue can say Use again.',options:['Use again','Go','No','Be careful'],answer:0},
+    {type:'单元小测',prompt:'Yellow + red = ___ .',hint:'黄色和红色混合会变成橙色。',audio:'Yellow and red make orange.',options:['orange','purple','green','brown'],answer:0}
   ]}
 };
 createApp({
