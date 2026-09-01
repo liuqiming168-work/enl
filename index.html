@@ -36,40 +36,81 @@
 </aside>
 <main class="content">
   <div class="topbar"><div style="display:flex;align-items:center;gap:10px"><button class="mobile-menu" @click="view='home'">☰</button><div class="crumb"><b>{{viewTitle}}</b><span v-if="view==='practice'"> · {{currentPractice.label}}</span></div></div><div class="top-actions"><div class="streak">🔥 {{streak}} 天连续学习</div><button class="parent-btn" @click="view='report'">家长报告 ↗</button></div></div>
-  <template v-if="view==='home'"><section class="hero"><div class="hero-copy"><div class="eyebrow">✦ 今天也来探险吧</div><h1>把英语，<span>说成自己的话。</span></h1><p>跟着 PEP 三年级上册，从 Hello! 开始，一点点认识单词、听懂句子，再勇敢开口。</p><button class="hero-cta" @click="startToday">开始今天的学习 <span>→</span></button></div></section>
+  <template v-if="view==='home'"><section class="hero"><div class="hero-copy"><div class="eyebrow">✦ 今天也来探险吧</div><h1>把英语，<span>说成自己的话。</span></h1><p>跟着 PEP 三年级上册新教材，从交朋友开始，认识家人、动物和身边的植物，再勇敢开口。</p><button class="hero-cta" @click="startToday">开始今天的学习 <span>→</span></button></div></section>
   <section><div class="section-head"><div><h2>今天的学习任务</h2><p>建议用时 10 分钟，完成后会自动记录进度</p></div><button class="text-btn" @click="view='course'">查看教材地图 →</button></div><div class="task-grid"><article v-for="task in tasks" :key="task.key" class="task-card"><div><div class="task-top"><span class="task-icon">{{task.icon}}</span><span class="tag" :class="task.tagClass">{{task.tag}}</span></div><h3>{{task.title}}</h3><p>{{task.desc}}</p></div><div class="task-action"><span>{{task.meta}}</span><button class="small-action" @click="startTask(task.key)">{{task.action}}</button></div></article></div></section>
   <div class="lower-grid"><section><div class="section-head"><div><h2>学习进度</h2><p>从 Unit 1 开始，稳稳走完每一步</p></div><button class="text-btn" @click="view='course'">全部单元</button></div><div class="panel progress-list"><div v-for="(unit,i) in units" :key="unit.id" class="progress-row"><div class="unit-number" :class="unit.color">{{i+1}}</div><div><strong>{{unit.id}} {{unit.title}}</strong><small>{{unit.subtitle}}</small><div class="bar"><i :style="{width:unit.progress+'%',background:unit.progress===100?'var(--green)':'var(--blue)'}"></i></div></div><em>{{unit.progress}}%</em></div></div></section><section><div class="section-head"><div><h2>我的小数据</h2><p>坚持比速度更重要</p></div></div><div class="panel"><div class="stats"><div class="stat"><b>{{learned}}</b><span>已学单词</span></div><div class="stat"><b>{{accuracy}}%</b><span>练习正确率</span></div><div class="stat"><b>{{minutes}}</b><span>本周分钟</span></div><div class="stat"><b>{{badges}}</b><span>获得徽章</span></div></div><p class="report-note">{{reportTip}}</p></div></section></div></template>
-  <template v-else-if="view==='course'"><section class="course-view"><div class="course-head"><div><h1>教材地图</h1><p>PEP 三年级上册 · 2022 版</p></div><select class="select-like"><option>三年级上册</option></select></div><div class="unit-tabs"><button v-for="(unit,i) in units" :key="unit.id" class="unit-tab" :class="{active:selectedUnit===i}" @click="selectedUnit=i"><b>{{unit.id}}</b><span>{{unit.title}}</span></button></div><div class="parts"><article v-for="part in activeUnit.parts" :key="part.id" class="part-card"><div><h3>{{part.id}} <span style="color:var(--coral)">·</span> {{part.title}}</h3><p>{{part.desc}}</p></div><div class="lesson-list"><div v-for="lesson in part.lessons" :key="lesson" class="lesson"><span>{{lesson}}</span><button @click="startTask('lesson')">开始 →</button></div></div></article></div></section></template>
+  <template v-else-if="view==='course'"><section class="course-view"><div class="course-head"><div><h1>教材地图</h1><p>PEP 三年级上册 · 2024 年 7 月第 1 版</p></div><select class="select-like"><option>三年级上册</option></select></div><div class="unit-tabs"><button v-for="(unit,i) in units" :key="unit.id" class="unit-tab" :class="{active:selectedUnit===i}" @click="selectedUnit=i"><b>{{unit.id}}</b><span>{{unit.title}}</span></button></div><div class="parts"><article v-for="part in activeUnit.parts" :key="part.id" class="part-card"><div><h3>{{part.id}} <span style="color:var(--coral)">·</span> {{part.title}}</h3><p>{{part.desc}}</p></div><div class="lesson-list"><div v-for="lesson in part.lessons" :key="lesson" class="lesson"><span>{{lesson}}</span><button @click="startTask('lesson')">开始 →</button></div></div></article></div></section></template>
   <template v-else-if="view==='practice'"><section class="practice"><div class="practice-top"><button class="back-btn" @click="leavePractice">← 返回任务</button><h1>{{currentPractice.label}}</h1><span style="font-size:12px;color:var(--muted)">{{quizIndex+1}} / {{quizList.length}}</span></div><div class="mode-switch"><button v-for="mode in modes" :key="mode.key" class="mode" :class="{active:practiceMode===mode.key}" @click="switchMode(mode.key)">{{mode.icon}} {{mode.label}}</button><select v-if="voiceOptions.length" v-model="selectedVoiceName" class="voice-select" aria-label="英文发音"><option value="">自然英文音色</option><option v-for="voice in voiceOptions" :key="voice.name" :value="voice.name">{{voice.label}}</option></select></div><div class="quiz-card"><div class="quiz-meta"><span>{{currentPractice.unit}}</span><span>得分 {{score}} ⭐</span></div><div class="quiz-type">{{currentQuiz.type}}</div><h2>{{currentQuiz.prompt}}</h2><div v-if="currentQuiz.phonetic" class="phonetic">{{currentQuiz.phonetic}}</div><p class="quiz-hint">{{currentQuiz.hint}}</p><div class="speak-actions"><button v-if="currentQuiz.audio" class="sound-btn" @click="speak(currentQuiz.audio)" :disabled="isListening">🔊 听示范</button><button v-if="practiceMode==='speak'" class="mic-btn" :class="{listening:isListening}" @click="toggleListening" :disabled="!speechSupported"><span v-if="isListening" class="wave"><i></i><i></i><i></i></span>{{isListening?'正在听，请读出来…':'🎤 开始跟读'}}</button></div><template v-if="practiceMode==='speak'"><div v-if="speechMessage" class="speech-result" :class="speechResultClass"><strong>{{speechMessage}}</strong><p>{{speechDetail}}</p><p v-if="recognizedText" class="heard-text">识别到：“{{recognizedText}}”</p></div><p class="speech-note">本工具不保存录音；浏览器可能调用在线语音识别服务。这是内容识别，不是专业音素评分。</p></template><template v-else><div class="options" style="margin-top:18px"><button v-for="(option,i) in currentQuiz.options" :key="option" class="option" :class="{correct:answered && i===currentQuiz.answer,wrong:answered && i===selectedOption && i!==currentQuiz.answer}" @click="answer(i)"><span class="option-letter">{{String.fromCharCode(65+i)}}</span>{{option}}</button></div><div v-if="answered" class="feedback-box" :class="lastCorrect?'good':'bad'">{{lastCorrect?'太棒了！这个知识点掌握得很稳。':'没关系，我们再听一次，换个方法试试看。'}}</div></template><div class="quiz-footer"><span>{{practiceMode==='speak'?(speechPassed?'内容识别通过，可以继续':'先听示范，再大声读出来'):answered?'可以继续下一题啦':'选一个你认为正确的答案'}}</span><button v-if="practiceMode==='speak'?speechPassed:answered" class="next-btn" @click="nextQuiz">{{quizIndex===quizList.length-1?'完成练习':'下一题 →'}}</button></div></div></section></template>
   <template v-else-if="view==='report'"><section class="report"><h1>学习报告</h1><p>这是刘劲最近 7 天的学习小结，继续保持这个节奏。</p><div class="report-grid"><div class="report-stat"><b>{{minutes}}</b><span>学习分钟</span></div><div class="report-stat"><b>{{learned}}</b><span>学会单词</span></div><div class="report-stat"><b>{{accuracy}}%</b><span>练习正确率</span></div><div class="report-stat"><b>{{streak}} 天</b><span>连续学习</span></div></div><div class="report-panel"><h2>能力小雷达</h2><div v-for="skill in skills" :key="skill.label" class="skill-row"><span>{{skill.label}}</span><div class="bar"><i :style="{width:skill.value+'%',background:skill.color}"></i></div><b>{{skill.value}}%</b></div></div><div class="report-panel"><h2>待复习内容</h2><div v-if="mistakes.length===0" class="empty">暂时没有错题，太厉害了！</div><div v-for="mistake in mistakes" :key="mistake.word" class="mistake"><div><strong>{{mistake.word}}</strong><span>{{mistake.reason}}</span></div><button class="review-btn" @click="startTask('review')">现在复习</button></div></div></section></template>
 </main></div></div>
 <script>
 const {createApp,ref,computed}=Vue;
 const units=[
- {id:'Unit 1',title:'Hello!',subtitle:'问候与自我介绍',color:'coral',progress:36,parts:[{id:'Part A',title:'Hello!',desc:'会问候，会介绍自己',lessons:['Let\'s talk','Let\'s learn','Let\'s play']},{id:'Part B',title:'What\'s your name?',desc:'认识新朋友，勇敢开口',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Story time',desc:'在故事里复习本单元',lessons:['Story time','角色跟读','单元闯关']}]},
- {id:'Unit 2',title:'Colours!',subtitle:'颜色与朋友',color:'blue',progress:0,parts:[{id:'Part A',title:'I see red.',desc:'认识身边的颜色',lessons:['Let\'s talk','Let\'s learn','Let\'s do']},{id:'Part B',title:'Colour it!',desc:'用英语描述颜色',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Story time',desc:'颜色主题故事',lessons:['Story time','角色跟读','单元闯关']}]},
- {id:'Unit 3',title:'Look at me!',subtitle:'身体部位与朋友',color:'green',progress:0,parts:[{id:'Part A',title:'Look at me!',desc:'认识身体部位',lessons:['Let\'s talk','Let\'s learn','Let\'s do']},{id:'Part B',title:'This is my face.',desc:'介绍自己的身体',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Story time',desc:'身体主题故事',lessons:['Story time','角色跟读','单元闯关']}]},
- {id:'Recycle 1',title:'复习 1',subtitle:'Unit 1—3 综合复习',color:'yellow',progress:0,parts:[{id:'Task 1',title:'校园见面',desc:'在校园里完成任务',lessons:['听力任务','对话任务','字母闯关']},{id:'Task 2',title:'颜色画廊',desc:'把颜色说给朋友听',lessons:['看图说颜色','配对任务','综合小测']},{id:'Task 3',title:'小小观察家',desc:'综合运用 Unit 1—3',lessons:['听音找一找','故事排序','复习闯关']}]},
- {id:'Unit 4',title:'We love animals',subtitle:'动物与询问',color:'coral',progress:0,parts:[{id:'Part A',title:'What\'s this?',desc:'认识可爱的动物',lessons:['Let\'s talk','Let\'s learn','Let\'s do']},{id:'Part B',title:'What\'s that?',desc:'远近都能问一问',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Story time',desc:'动物主题故事',lessons:['Story time','角色跟读','单元闯关']}]},
- {id:'Unit 5',title:'Let\'s eat!',subtitle:'食物与礼貌请求',color:'blue',progress:0,parts:[{id:'Part A',title:'I\'d like...',desc:'说出我想吃的食物',lessons:['Let\'s talk','Let\'s learn','Let\'s do']},{id:'Part B',title:'Can I have...?',desc:'有礼貌地提出请求',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Story time',desc:'美味的故事时间',lessons:['Story time','角色跟读','单元闯关']}]},
- {id:'Unit 6',title:'Happy birthday!',subtitle:'数字、年龄与生日',color:'green',progress:0,parts:[{id:'Part A',title:'How old are you?',desc:'用英语说年龄',lessons:['Let\'s talk','Let\'s learn','Let\'s do']},{id:'Part B',title:'How many...?',desc:'数一数，说一说',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Story time',desc:'生日派对故事',lessons:['Story time','角色跟读','单元闯关']}]},
- {id:'Recycle 2',title:'复习 2',subtitle:'Unit 4—6 综合复习',color:'yellow',progress:0,parts:[{id:'Task 1',title:'动物园任务',desc:'和动物朋友打招呼',lessons:['听力任务','对话任务','字母闯关']},{id:'Task 2',title:'快乐餐厅',desc:'完成一次英语点餐',lessons:['食物配对','情景选择','综合小测']},{id:'Task 3',title:'生日派对',desc:'把本学期知识串起来',lessons:['数字任务','故事排序','复习闯关']}]}
+ {id:'Unit 1',title:'Making friends',subtitle:'问候、介绍与友谊',color:'coral',progress:36,parts:[{id:'Part A',title:'Hello!',desc:'问候新朋友，介绍自己的名字',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'How can we be a good friend?',desc:'用 listen、help、share 交朋友',lessons:['Let\'s talk','Let\'s chant','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作交友思维导图，读 Zoom 和 Zip 的故事',lessons:['Project','角色跟读','Self-check']}]},
+ {id:'Unit 2',title:'Different families',subtitle:'家庭成员与不同的家庭',color:'blue',progress:18,parts:[{id:'Part A',title:'Who lives with you?',desc:'认识家庭成员并介绍家人',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'Different families',desc:'用 This is my... 介绍大小不同的家庭',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作 family tree，读小家庭和大家庭',lessons:['Make a family tree','角色跟读','Self-check']}]},
+ {id:'Unit 3',title:'Our animal friends',subtitle:'宠物、野生动物与特征',color:'green',progress:8,parts:[{id:'Part A',title:'What pets do you know?',desc:'询问宠物并表达 I like...',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'What wild animals do you know?',desc:'认识 fox、panda、lion 等野生动物',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作动物图画书，读鲸鱼的故事',lessons:['Make an animal picture book','角色跟读','Self-check']}]},
+ {id:'Unit 4',title:'Plants around us',subtitle:'水果、植物与爱护花园',color:'coral',progress:4,parts:[{id:'Part A',title:'What do we get from plants?',desc:'认识 apples、bananas、grapes 和 oranges',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'How can we help plants?',desc:'用 water、plant、grow 谈论照顾植物',lessons:['Let\'s talk','Let\'s learn','Letters and sounds']},{id:'Part C',title:'Project & Reading time',desc:'记录植物观察，分享我们的绿色行动',lessons:['Plant project','角色跟读','Self-check']}]},
+ {id:'Unit 5',title:'The colourful world',subtitle:'待补充教材内容',color:'blue',progress:0,parts:[{id:'Part A',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Project','角色跟读','Self-check']}]},
+ {id:'Unit 6',title:'Useful numbers',subtitle:'待补充教材内容',color:'green',progress:0,parts:[{id:'Part A',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Project','角色跟读','Self-check']}]},
+ {id:'Revision',title:'Being a good guest',subtitle:'待补充复习内容',color:'yellow',progress:0,parts:[{id:'Task 1',title:'内容待补充',desc:'收到课本页面后更新',lessons:['听力任务','对话任务','词汇闯关']},{id:'Task 2',title:'内容待补充',desc:'收到课本页面后更新',lessons:['情景选择','配对任务','综合小测']},{id:'Task 3',title:'内容待补充',desc:'收到课本页面后更新',lessons:['故事排序','口语任务','复习闯关']}]}
 ];
 const listenQuizzes=[
- {type:'听音选一选',prompt:'Hello!',phonetic:'/həˈləʊ/',hint:'下面哪一句和它意思相同？',audio:'Hello!',options:['你好！','再见！','谢谢！','对不起！'],answer:0},
- {type:'看图选单词',prompt:'🌈 看到红色时，我们说：',hint:'选出正确的英文表达。',options:['blue','red','green','yellow'],answer:1,audio:'red'},
- {type:'句型小侦探',prompt:'I see ___ .',hint:'当你看到蓝色时，应该填什么？',options:['red','green','blue','black'],answer:2,audio:'I see blue.'},
+ {type:'听音选一选',prompt:'What\'s your name?',phonetic:'/wɒts jɔː neɪm/',hint:'选择这句话的中文意思。',audio:'What is your name?',options:['你叫什么名字？','你好吗？','这是我的家人。','我喜欢狗。'],answer:0},
+ {type:'家庭词汇',prompt:'This is my ___ .',hint:'图片里是一位妈妈，选择正确的单词。',audio:'This is my mum.',options:['dad','mum','sister','cousin'],answer:1},
+ {type:'动物特征',prompt:'The giraffe is ___ .',hint:'长颈鹿很高，选出正确的词。',audio:'The giraffe is tall.',options:['small','fast','tall','big'],answer:2},
 ];
 const speakQuizzes=[
- {type:'跟读热身',prompt:'Hello!',phonetic:'/həˈləʊ/',hint:'先听一遍，再像朋友一样自然地说出来。',audio:'Hello!',options:['你好！','再见！','谢谢！','对不起！'],answer:0},
- {type:'情景小剧场',prompt:'What\'s your name?',phonetic:'/wɒts jɔː neɪm/',hint:'和新朋友打招呼时，你可以这样问。',audio:'What is your name?',options:['你好吗？','你几岁？','你叫什么名字？','你喜欢什么？'],answer:2},
- {type:'角色对话',prompt:'Nice to meet you!',phonetic:'/naɪs tə miːt juː/',hint:'听完后选择你要接上的下一句。',audio:'Nice to meet you!',options:['Nice to meet you, too!','Good night!','I\'m eight.','Here you are.'],answer:0},
+ {type:'跟读热身',prompt:'Hello! My name is Mike Black.',phonetic:'/həˈləʊ maɪ neɪm ɪz maɪk blæk/',hint:'像在班里认识新朋友一样，自然地介绍自己。',audio:'Hello! My name is Mike Black.',options:['你好，我叫迈克·布莱克。','这是我的家人。','我喜欢狗。','我们可以分享。'],answer:0},
+ {type:'家庭小剧场',prompt:'This is my family.',phonetic:'/ðɪs ɪz maɪ ˈfæməli/',hint:'介绍全家人时，跟着示范说一遍。',audio:'This is my family.',options:['这是我的家人。','这是我的动物。','我有一个花园。','我们很快。'],answer:0},
+ {type:'动物小剧场',prompt:'I like my dog.',phonetic:'/aɪ laɪk maɪ dɒɡ/',hint:'说出你喜欢的宠物，注意 like 的长音。',audio:'I like my dog.',options:['我喜欢我的狗。','我有一只猫。','这是一只狮子。','我们可以浇水。'],answer:0},
 ];
 const quizQuizzes=[
- {type:'单元小测',prompt:'朋友说：Nice to meet you!',hint:'你可以怎样回应？',audio:'Nice to meet you, too!',options:['Nice to meet you, too!','Good night!','I\'m eight.','Here you are.'],answer:0},
- {type:'单元小测',prompt:'How are you?',phonetic:'/haʊ ɑː juː/',hint:'选择正确的中文意思。',audio:'How are you?',options:['我很好，谢谢！','我叫刘劲。','这是我的脸。','我想要果汁。'],answer:0},
- {type:'单元小测',prompt:'I see ___ .',hint:'当你看到蓝色时，应该填什么？',audio:'I see blue.',options:['red','green','blue','black'],answer:2},
+ {type:'单元小测',prompt:'Is this your brother?',hint:'选择合适的回答。',audio:'Is this your brother?',options:['Yes, it is.','Nice to meet you.','I like fish.','We can plant trees.'],answer:0},
+ {type:'单元小测',prompt:'What animals do you know?',hint:'选择一个野生动物。',audio:'What animals do you know?',options:['panda','cousin','grapes','garden'],answer:0},
+ {type:'单元小测',prompt:'We can ___ the flowers.',hint:'我们可以给花浇水。',audio:'We can water the flowers.',options:['water','share','listen','play'],answer:0},
 ];
+const unitQuizSets={
+  0:{listen:[
+    {type:'听音选一选',prompt:'What\'s your name?',phonetic:'/wɒts jɔː neɪm/',hint:'选择这句话的中文意思。',audio:'What is your name?',options:['你叫什么名字？','你好吗？','这是我的家人。','我喜欢狗。'],answer:0},
+    {type:'交友行动',prompt:'We can ___ .',hint:'好朋友之间要学会分享。',audio:'We can share.',options:['share','sleep','run','eat'],answer:0},
+    {type:'听音辨动作',prompt:'Point to your ear.',hint:'选择这句话中身体部位的中文。',audio:'Point to your ear.',options:['耳朵','手','眼睛','嘴巴'],answer:0}
+  ],speak:[
+    {type:'跟读热身',prompt:'Hello! My name is Mike Black.',phonetic:'/həˈləʊ maɪ neɪm ɪz maɪk blæk/',hint:'像在班里认识新朋友一样，自然地介绍自己。',audio:'Hello! My name is Mike Black.',options:['你好，我叫迈克·布莱克。','这是我的家人。','我喜欢狗。','我们可以分享。'],answer:0},
+    {type:'角色对话',prompt:'Nice to meet you.',phonetic:'/naɪs tə miːt juː/',hint:'和新朋友见面时，跟着示范说一遍。',audio:'Nice to meet you.',options:['Nice to meet you, too!','Good night!','I\'m eight.','Here you are.'],answer:0},
+    {type:'友谊宣言',prompt:'I am a good friend.',phonetic:'/aɪ æm ə ɡʊd frend/',hint:'大声说出你的友谊宣言。',audio:'I am a good friend.',options:['我是一个好朋友。','我有一个大家庭。','这是一只熊猫。','我们可以浇水。'],answer:0}
+  ],quiz:[
+    {type:'单元小测',prompt:'朋友说：Nice to meet you!',hint:'你可以怎样回应？',audio:'Nice to meet you, too!',options:['Nice to meet you, too!','Good night!','I\'m eight.','Here you are.'],answer:0},
+    {type:'单元小测',prompt:'I ___ and share.',hint:'好朋友会倾听，也会分享。',audio:'I listen and share.',options:['listen','sleep','jump','draw'],answer:0},
+    {type:'单元小测',prompt:'Wave your ___ .',hint:'挥一挥你的手。',audio:'Wave your hand.',options:['hand','ear','eye','mouth'],answer:0}
+  ]},
+  1:{listen:listenQuizzes,speak:[speakQuizzes[1],{type:'家庭小剧场',prompt:'This is my mum.',phonetic:'/ðɪs ɪz maɪ mʌm/',hint:'介绍你的妈妈。',audio:'This is my mum.',options:['这是我的妈妈。','这是我的姐姐。','我喜欢鱼。','我们很快。'],answer:0},{type:'家庭小剧场',prompt:'I have two cousins too.',hint:'说出你有两个表兄弟姐妹。',audio:'I have two cousins too.',options:['我也有两个表兄弟姐妹。','我有一个花园。','这是一只狮子。','我们可以分享。'],answer:0}],quiz:[
+    {type:'单元小测',prompt:'Is this your brother?',hint:'选择合适的回答。',audio:'Is this your brother?',options:['Yes, it is.','Nice to meet you.','I like fish.','We can plant trees.'],answer:0},
+    {type:'单元小测',prompt:'No, it\'s my ___ .',hint:'不是哥哥，是 cousin（表兄弟姐妹）。',audio:"No, it's my cousin.",options:['cousin','mum','grandpa','baby sister'],answer:0},
+    {type:'单元小测',prompt:'This family is ___ .',hint:'图片中家庭成员很多，选择 big。',audio:'This family is big.',options:['big','small','fast','tall'],answer:0}
+  ]},
+  2:{listen:[
+    {type:'听音选动物',prompt:'I like ___ .',hint:'选择你喜欢的宠物。',audio:'I like dogs.',options:['dogs','cousins','grapes','gardens'],answer:0},
+    {type:'动物词汇',prompt:'It\'s a ___ .',hint:'图片中是熊猫。',audio:"It's a panda.",options:['panda','fox','lion','giraffe'],answer:0},
+    {type:'动物特征',prompt:'The giraffe is ___ .',hint:'长颈鹿很高。',audio:'The giraffe is tall.',options:['small','fast','tall','big'],answer:2}
+  ],speak:[speakQuizzes[2],{type:'动物小剧场',prompt:"It's a red panda.",phonetic:'/ɪts ə red ˈpændə/',hint:'在动物园认出小熊猫。',audio:"It's a red panda.",options:['它是一只小熊猫。','它是一只狮子。','我喜欢鱼。','我们很大。'],answer:0},{type:'动物小剧场',prompt:'The fish is small.',phonetic:'/ðə fɪʃ ɪz smɔːl/',hint:'跟着鲸鱼故事说一说。',audio:'The fish is small.',options:['鱼很小。','鱼很快。','大象很大。','熊猫吃很多。'],answer:0}],quiz:[
+    {type:'单元小测',prompt:'What animals do you know?',hint:'选择一个野生动物。',audio:'What animals do you know?',options:['panda','cousin','grapes','garden'],answer:0},
+    {type:'单元小测',prompt:'The lion is ___ .',hint:'狮子跑得很快。',audio:'The lion is fast.',options:['fast','small','tall','big'],answer:0},
+    {type:'单元小测',prompt:'I like my ___ .',hint:'选择宠物 dog。',audio:'I like my dog.',options:['dog','tree','cousin','apple'],answer:0}
+  ]},
+  3:{listen:[
+    {type:'植物词汇',prompt:'I like ___ .',hint:'选择一种水果。',audio:'I like apples.',options:['apples','water','trees','flowers'],answer:0},
+    {type:'植物词汇',prompt:'Grapes are ___ .',hint:'葡萄很小。',audio:'Grapes are small.',options:['small','big','fast','tall'],answer:0},
+    {type:'听音选动作',prompt:'Let\'s grow a tree!',hint:'选择正确的中文意思。',audio:'Let us grow a tree.',options:['让我们种一棵树！','让我们分享！','这是一只熊猫。','我喜欢香蕉。'],answer:0}
+  ],speak:[
+    {type:'植物小剧场',prompt:'Do you like apples?',phonetic:'/duː juː laɪk ˈæpəlz/',hint:'问问朋友喜欢不喜欢苹果。',audio:'Do you like apples?',options:['你喜欢苹果吗？','你有兄弟吗？','这是什么动物？','我们很快。'],answer:0},
+    {type:'植物小剧场',prompt:'We can water the flowers.',phonetic:'/wiː kən ˈwɔːtə ðə ˈflaʊəz/',hint:'说出我们能为花园做的事。',audio:'We can water the flowers.',options:['我们可以给花浇水。','我们可以吃鱼。','我们喜欢狮子。','这是我的表兄弟。'],answer:0},
+    {type:'植物小剧场',prompt:'I like the fresh air.',phonetic:'/aɪ laɪk ðə freʃ eə/',hint:'在花园里说出你的感受。',audio:'I like the fresh air.',options:['我喜欢新鲜空气。','我喜欢大象。','我有一个大家庭。','苹果很长。'],answer:0}
+  ],quiz:[
+    {type:'单元小测',prompt:'We can ___ the flowers.',hint:'我们可以给花浇水。',audio:'We can water the flowers.',options:['water','share','listen','play'],answer:0},
+    {type:'单元小测',prompt:'Bananas are ___ .',hint:'香蕉是长的。',audio:'Bananas are long.',options:['long','small','fast','big'],answer:0},
+    {type:'单元小测',prompt:'Trees grow and give us ___ .',hint:'树木给我们新鲜空气。',audio:'Trees grow and give us fresh air.',options:['fresh air','cousins','pets','numbers'],answer:0}
+  ]}
+};
 createApp({
   setup() {
     const view = ref('home');
@@ -111,9 +152,9 @@ createApp({
       {key:'quiz',label:'小测',icon:'✓'}
     ];
     const tasks = [
-      {key:'words',icon:'🧩',tag:'今日推荐',tagClass:'',title:'单词探险',desc:'用图片和声音认识 Unit 1 的新朋友',meta:'6 个单词 · 4 分钟',action:'开始'},
-      {key:'speak',icon:'🎙',tag:'开口说',tagClass:'blue',title:'跟读小剧场',desc:'和红熊猫老师一起练习问候对话',meta:'3 句对话 · 3 分钟',action:'开口'},
-      {key:'review',icon:'↺',tag:'巩固一下',tagClass:'warm',title:'错题回收站',desc:'把昨天卡住的内容再练一遍',meta:'2 道待复习',action:'复习'}
+      {key:'words',icon:'🧩',tag:'今日推荐',tagClass:'',title:'单词探险',desc:'认识 family、animals 和 plants 的新朋友',meta:'6 个单词 · 4 分钟',action:'开始'},
+      {key:'speak',icon:'🎙',tag:'开口说',tagClass:'blue',title:'跟读小剧场',desc:'和小动物老师练习介绍家人和宠物',meta:'3 句对话 · 3 分钟',action:'开口'},
+      {key:'review',icon:'↺',tag:'巩固一下',tagClass:'warm',title:'错题回收站',desc:'把昨天卡住的句型再练一遍',meta:'2 道待复习',action:'复习'}
     ];
     const skills = [
       {label:'认读',value:90,color:'var(--coral)'},
@@ -127,11 +168,14 @@ createApp({
     ]);
 
     const activeUnit = computed(() => units[selectedUnit.value]);
-    const quizList = computed(() => practiceMode.value === 'speak' ? speakQuizzes : practiceMode.value === 'quiz' ? quizQuizzes : listenQuizzes);
+    const quizList = computed(() => {
+      const set = unitQuizSets[selectedUnit.value] || unitQuizSets[0];
+      return set[practiceMode.value] || set.listen;
+    });
     const currentQuiz = computed(() => quizList.value[quizIndex.value] || quizList.value[0]);
     const currentPractice = computed(() => ({
       label: practiceMode.value === 'speak' ? '跟读小剧场' : practiceMode.value === 'quiz' ? '单元小测' : '听力探险',
-      unit: 'Unit 1 · Part A'
+      unit: units[selectedUnit.value].id + ' · ' + units[selectedUnit.value].title
     }));
     const viewTitle = computed(() => ({home:'今日学习',course:'教材地图',practice:'练习中心',report:'学习报告'}[view.value]));
     const reportTip = computed(() => accuracy.value >= 90 ? '这周的听力进步很明显，继续保持！' : '每天完成一个小任务，你会发现自己越来越敢开口。');
