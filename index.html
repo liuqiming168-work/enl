@@ -51,8 +51,8 @@ const units=[
  {id:'Unit 3',title:'Our animal friends',subtitle:'宠物、野生动物与特征',color:'green',progress:8,parts:[{id:'Part A',title:'What pets do you know?',desc:'询问宠物并表达 I like...',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'What wild animals do you know?',desc:'认识 fox、panda、lion 等野生动物',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作动物图画书，读鲸鱼的故事',lessons:['Make an animal picture book','角色跟读','Self-check']}]},
  {id:'Unit 4',title:'Plants around us',subtitle:'水果、植物与爱护花园',color:'coral',progress:28,parts:[{id:'Part A',title:'What do we get from plants?',desc:'认识 apples、bananas、grapes 和 oranges',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'How can we help plants?',desc:'用 water、plant、grow 谈论照顾花园',lessons:['Let\'s talk','Let\'s learn','Letters and sounds']},{id:'Part C',title:'Project & Reading time',desc:'制作纸花园，读苹果树从种子到结果的故事',lessons:['Make a paper garden','角色跟读','Self-check']}]},
  {id:'Unit 5',title:'The colourful world',subtitle:'颜色、标识与多彩自然',color:'blue',progress:12,parts:[{id:'Part A',title:'What colours do you see?',desc:'认识 red、pink、green、orange 等颜色',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'How do colours help us?',desc:'用颜色表达喜好，读懂颜色标识',lessons:['Let\'s talk','Colour and say','Listen and do']},{id:'Part C',title:'Project & Reading time',desc:'制作 colour flip book，阅读向日葵的成长故事',lessons:['Make a colour flip book','角色跟读','Self-check']}]},
- {id:'Unit 6',title:'Useful numbers',subtitle:'待补充教材内容',color:'green',progress:0,parts:[{id:'Part A',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'内容待补充',desc:'收到课本页面后更新',lessons:['Project','角色跟读','Self-check']}]},
- {id:'Revision',title:'Being a good guest',subtitle:'待补充复习内容',color:'yellow',progress:0,parts:[{id:'Task 1',title:'内容待补充',desc:'收到课本页面后更新',lessons:['听力任务','对话任务','词汇闯关']},{id:'Task 2',title:'内容待补充',desc:'收到课本页面后更新',lessons:['情景选择','配对任务','综合小测']},{id:'Task 3',title:'内容待补充',desc:'收到课本页面后更新',lessons:['故事排序','口语任务','复习闯关']}]}
+ {id:'Unit 6',title:'Useful numbers',subtitle:'数字、年龄与生日',color:'green',progress:16,parts:[{id:'Part A',title:'When do we use numbers?',desc:'会问年龄，会说 one 到 ten',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'How useful are numbers?',desc:'用 How many...? 数一数、说一说',lessons:['Let\'s talk','Count and say','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作生日卡片，读数字小故事',lessons:['Make a birthday card','角色跟读','Self-check']}]},
+ {id:'Revision',title:'Being a good guest',subtitle:'全册综合复习与礼貌做客',color:'yellow',progress:0,parts:[{id:'Task 1',title:'Say hello',desc:'综合问候、介绍和身体部位',lessons:['Listen and tick','Read aloud','词汇闯关']},{id:'Task 2',title:'Be helpful',desc:'综合动物、颜色和植物表达',lessons:['Look and circle','情景选择','综合小测']},{id:'Task 3',title:'Be a good guest',desc:'练习礼貌、分享和倾听',lessons:['角色扮演','口语任务','Self-check']}]}
 ];
 const listenQuizzes=[
  {type:'听音选一选',prompt:'What\'s your name?',phonetic:'/wɒts jɔː neɪm/',hint:'选择这句话的中文意思。',audio:'What is your name?',options:['你叫什么名字？','你好吗？','这是我的家人。','我喜欢狗。'],answer:0},
@@ -122,6 +122,32 @@ const unitQuizSets={
     {type:'单元小测',prompt:'It\'s green. Green can say “___”.',hint:'绿色标识表示可以通行。',audio:'It is green. Green can say Go.',options:['Go','No','Be careful','Use again'],answer:0},
     {type:'单元小测',prompt:'It\'s blue. Blue can say “___”.',hint:'蓝色标识表示可以再次使用。',audio:'It is blue. Blue can say Use again.',options:['Use again','Go','No','Be careful'],answer:0},
     {type:'单元小测',prompt:'Yellow + red = ___ .',hint:'黄色和红色混合会变成橙色。',audio:'Yellow and red make orange.',options:['orange','purple','green','brown'],answer:0}
+  ]},
+  5:{listen:[
+    {type:'数字词汇',prompt:'How old are you?',hint:'选择合适的回答。',audio:'How old are you?',options:["I'm five years old.",'I like five.','This is five.','Five is red.'],answer:0},
+    {type:'数字词汇',prompt:'How many apples?',hint:'图中有两个苹果。',audio:'How many apples? Two.',options:['Two.','Five.','Seven.','Ten.'],answer:0},
+    {type:'数字规律',prompt:'1, 3, 5, 7, ___',hint:'这些是奇数，接下来是 nine。',audio:'One, three, five, seven, nine.',options:['nine','eight','ten','four'],answer:0}
+  ],speak:[
+    {type:'数字小剧场',prompt:'I\'m five years old.',phonetic:'/aɪm faɪv jɪəz əʊld/',hint:'说出自己的年龄。',audio:"I'm five years old.",options:['我五岁。','我有五个苹果。','现在五点。','这是第五张卡片。'],answer:0},
+    {type:'数字小剧场',prompt:'Three. And one orange.',phonetic:'/θriː ænd wʌn ˈɒrɪndʒ/',hint:'数一数水果，再说出橙子的数量。',audio:'Three. And one orange.',options:['三个，还有一个橙子。','三个苹果。','一个橙色。','我十岁。'],answer:0},
+    {type:'数字小剧场',prompt:'Happy birthday!',phonetic:'/ˈhæpi ˈbɜːθdeɪ/',hint:'在生日派对上送上祝福。',audio:'Happy birthday!',options:['生日快乐！','谢谢。','请给我水。','再见。'],answer:0}
+  ],quiz:[
+    {type:'单元小测',prompt:'How old are you?',hint:'选择正确回答。',audio:'How old are you?',options:["I'm five years old.",'I like apples.','It is green.','This is my mum.'],answer:0},
+    {type:'单元小测',prompt:'How many bananas?',hint:'图片中有三根香蕉。',audio:'How many bananas? Three.',options:['Three.','One.','Six.','Ten.'],answer:0},
+    {type:'单元小测',prompt:'Ten is an ___ number.',hint:'10 可以被 2 整除，是 even（偶数）。',audio:'Ten is an even number.',options:['even','odd','old','small'],answer:0}
+  ]},
+  6:{listen:[
+    {type:'综合听力',prompt:'What colours are the baby cats?',hint:'选择图片中的颜色组合。',audio:'Black, orange and white.',options:['Black, orange and white.','Red, pink and blue.','Green and yellow.','Purple and brown.'],answer:0},
+    {type:'综合听力',prompt:'How can the children help?',hint:'在花园里，他们可以给花浇水。',audio:'Water the flowers.',options:['Water the flowers.','Plant the trees.','Feed the dog.','Draw a rainbow.'],answer:0},
+    {type:'综合听力',prompt:'How many fruits?',hint:'选择正确数量表达。',audio:'Three oranges.',options:['Three oranges.','Two apples.','Five bananas.','Nine grapes.'],answer:0}
+  ],speak:[
+    {type:'礼貌小剧场',prompt:'Nice to meet you too.',phonetic:'/naɪs tə miːt juː tuː/',hint:'回应朋友的问候。',audio:'Nice to meet you too.',options:['很高兴也认识你。','请小心。','我五岁。','这是我的花园。'],answer:0},
+    {type:'礼貌小剧场',prompt:'This is for you.',phonetic:'/ðɪs ɪz fə juː/',hint:'送礼物给朋友时这样说。',audio:'This is for you.',options:['这是给你的。','这是我的狗。','你喜欢香蕉吗？','我们可以帮忙。'],answer:0},
+    {type:'礼貌小剧场',prompt:'Be nice, please.',phonetic:'/biː naɪs pliːz/',hint:'做客时要友善、有礼貌。',audio:'Be nice, please.',options:['请友善一点。','请给我十个。','请浇水。','请说颜色。'],answer:0}
+  ],quiz:[
+    {type:'综合小测',prompt:'朋友送你礼物，你说：___',hint:'选择礼貌的回应。',audio:'Thank you.',options:['Thank you.','Good morning.','I am a dog.','It is blue.'],answer:0},
+    {type:'综合小测',prompt:'在动物园想让大家安静，可以说：___',hint:'阅读复习故事中的礼貌表达。',audio:'Shh.',options:['Shh.','Go!','Run!','Jump!'],answer:0},
+    {type:'综合小测',prompt:'Do you like bananas?',hint:'选择肯定回答。',audio:'Yes, I do. Thanks.',options:['Yes, I do. Thanks.','No, it\'s a lion.','I\'m ten.','This is my family.'],answer:0}
   ]}
 };
 createApp({
