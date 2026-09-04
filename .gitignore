@@ -8,3 +8,6 @@ nohup.out
 
 # Backup files
 *.bak
+
+# Local textbook reference photos (copyrighted source material)
+教材素材/
