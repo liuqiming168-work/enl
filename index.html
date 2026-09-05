@@ -46,6 +46,7 @@
   <template v-else-if="view==='report'"><section class="report"><h1>学习报告</h1><p>这是刘劲最近 7 天的学习小结，继续保持这个节奏。</p><div class="report-grid"><div class="report-stat"><b>{{minutes}}</b><span>学习分钟</span></div><div class="report-stat"><b>{{learned}}</b><span>学会单词</span></div><div class="report-stat"><b>{{accuracy}}%</b><span>练习正确率</span></div><div class="report-stat"><b>{{streak}} 天</b><span>连续学习</span></div></div><div class="report-panel"><h2>能力小雷达</h2><div v-for="skill in skills" :key="skill.label" class="skill-row"><span>{{skill.label}}</span><div class="bar"><i :style="{width:skill.value+'%',background:skill.color}"></i></div><b>{{skill.value}}%</b></div></div><div class="report-panel"><h2>待复习内容</h2><div v-if="mistakes.length===0" class="empty">暂时没有错题，太厉害了！</div><div v-for="mistake in mistakes" :key="mistake.word" class="mistake"><div><strong>{{mistake.word}}</strong><span>{{mistake.reason}}</span></div><button class="review-btn" @click="startTask('review')">现在复习</button></div></div></section></template>
 </main></div></div>
 <script src="textbook-data.js"></script>
+<script src="audio-data.js"></script>
 <script>
 const {createApp,ref,computed}=Vue;
 const units=[
@@ -242,6 +243,9 @@ createApp({
     const speechAwarded = ref(false);
     const isSpeaking = ref(false);
     let recognizer = null;
+    let activeAudio = null;
+    let recognitionHadResult = false;
+    let recognitionFinalized = false;
 
     const nav = [
       {key:'home',label:'今日学习',icon:'⌂'},
@@ -406,6 +410,8 @@ createApp({
       if (recognizer) {
         try { recognizer.abort(); } catch (_) {}
       }
+      recognitionHadResult = false;
+      recognitionFinalized = false;
       isListening.value = false;
     }
     function startListening() {
@@ -429,16 +435,29 @@ createApp({
       speechPassed.value = false;
       speechMessage.value = '正在听，请大声读出来…';
       speechDetail.value = '读完后停一下，系统会自动判断。';
+      recognitionHadResult = false;
+      recognitionFinalized = false;
       recognizer = new SpeechRecognition();
       recognizer.lang = 'en-US';
       recognizer.continuous = false;
-      recognizer.interimResults = false;
+      recognizer.interimResults = true;
       recognizer.maxAlternatives = 5;
       recognizer.onstart = () => { isListening.value = true; };
       recognizer.onresult = event => {
         const result = event.results && event.results[0];
         const alternatives = result ? Array.from(result).map(item => item.transcript.trim()).filter(Boolean) : [];
-        evaluateSpeech(alternatives);
+        if (alternatives.length) {
+          recognitionHadResult = true;
+          if (event.results[0].isFinal !== false) {
+            recognitionFinalized = true;
+            evaluateSpeech(alternatives);
+          }
+        }
+      };
+      recognizer.onnomatch = () => {
+        speechMessage.value = '没有识别清楚';
+        speechDetail.value = '请靠近麦克风，按“开始跟读”后等红熊猫提示再读一遍。';
+        speechPassed.value = false;
       };
       recognizer.onerror = event => {
         if (event.error === 'aborted') return;
@@ -453,7 +472,14 @@ createApp({
         speechDetail.value = message[1];
         speechPassed.value = false;
       };
-      recognizer.onend = () => { isListening.value = false; };
+      recognizer.onend = () => {
+        isListening.value = false;
+        if ((!recognitionHadResult || !recognitionFinalized) && speechMessage.value === '正在听，请大声读出来…') {
+          speechMessage.value = '没有听到有效句子';
+          speechDetail.value = '安卓请确认 Chrome 已获得麦克风权限，然后放慢语速再读一次。';
+          speechPassed.value = false;
+        }
+      };
       try { recognizer.start(); } catch (_) {
         isListening.value = false;
         speechMessage.value = '麦克风启动失败';
@@ -479,6 +505,33 @@ createApp({
       if (!selectedVoiceName.value && voiceOptions.value.length) selectedVoiceName.value = voiceOptions.value[0].name;
     }
     function speak(text) {
+      if (activeAudio) {
+        activeAudio.pause();
+        activeAudio.currentTime = 0;
+        activeAudio = null;
+      }
+      const audioPath = window.AUDIO_FILES && window.AUDIO_FILES[text];
+      if (audioPath) {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        isSpeaking.value = true;
+        activeAudio = new Audio(audioPath);
+        activeAudio.preload = 'auto';
+        activeAudio.onended = () => { isSpeaking.value = false; activeAudio = null; };
+        activeAudio.onerror = () => {
+          isSpeaking.value = false;
+          activeAudio = null;
+          speakWithSystemVoice(text);
+        };
+        activeAudio.play().catch(() => {
+          isSpeaking.value = false;
+          activeAudio = null;
+          speakWithSystemVoice(text);
+        });
+        return;
+      }
+      speakWithSystemVoice(text);
+    }
+    function speakWithSystemVoice(text) {
       if (!window.speechSynthesis) return;
       window.speechSynthesis.cancel();
       isSpeaking.value = true;
