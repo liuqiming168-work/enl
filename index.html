@@ -50,6 +50,7 @@
   <div class="topbar"><div style="display:flex;align-items:center;gap:10px"><button class="mobile-menu" @click="view='home'">☰</button><div class="crumb"><b>{{viewTitle}}</b><span v-if="view==='practice'"> · {{currentPractice.label}}</span></div></div><div class="top-actions"><button class="points-btn" @click="view='rewards'"><span>★</span><b>{{points}}</b><span>积分</span></button><div class="streak">🔥 {{streak}} 天连续学习</div><button class="parent-btn" @click="view='report'">家长报告 ↗</button></div></div>
   <template v-if="view==='home'"><section class="hero"><div class="hero-copy"><div class="eyebrow">✦ 今天也来探险吧</div><h1>把英语，<span>说成自己的话。</span></h1><p>跟着 PEP 三年级上册新教材，从交朋友开始，认识家人、动物和身边的植物，再勇敢开口。</p><button class="hero-cta" @click="startToday">开始今天的学习 <span>→</span></button></div></section>
   <section><div class="section-head"><div><h2>今天的学习任务</h2><p>建议用时 10 分钟，完成后会自动记录进度</p></div><button class="text-btn" @click="view='course'">查看教材地图 →</button></div><div class="task-grid"><article v-for="task in tasks" :key="task.key" class="task-card"><div><div class="task-top"><span class="task-icon">{{task.icon}}</span><span class="tag" :class="task.tagClass">{{task.tag}}</span></div><h3>{{task.title}}</h3><p>{{task.desc}}</p></div><div class="task-action"><span>{{task.meta}}</span><button class="small-action" @click="startTask(task.key)">{{task.action}}</button></div></article></div></section>
+  <section class="reward-section home-rewards"><div class="section-head"><div><h2>积分奖励站</h2><p>认真学习赚积分，选中奖励后请家长确认</p></div><button class="text-btn" @click="view='rewards'">兑换记录 →</button></div><div v-if="rewardNotice" class="reward-notice">{{rewardNotice}}</div><div class="earn-strip"><div class="earn-item"><b>答对一题 +2</b><span>认真思考有收获</span></div><div class="earn-item"><b>跟读通过 +3</b><span>勇敢开口更重要</span></div><div class="earn-item"><b>完成一组 +5</b><span>坚持完成小目标</span></div><div class="earn-item"><b>花园通关 +15</b><span>知识和策略双挑战</span></div></div><div class="reward-grid"><article v-for="reward in rewardCatalog" :key="reward.id" class="reward-card"><span class="reward-icon">{{reward.icon}}</span><h3>{{reward.title}}</h3><p>{{reward.desc}}</p><footer><span class="reward-cost">★ {{reward.cost}}</span><button :disabled="points < reward.cost || hasPendingReward(reward.id)" @click="requestReward(reward)">{{rewardButtonLabel(reward)}}</button></footer></article></div></section>
   <div class="lower-grid"><section><div class="section-head"><div><h2>学习进度</h2><p>从 Unit 1 开始，稳稳走完每一步</p></div><button class="text-btn" @click="view='course'">全部单元</button></div><div class="panel progress-list"><div v-for="(unit,i) in units" :key="unit.id" class="progress-row"><div class="unit-number" :class="unit.color">{{i+1}}</div><div><strong>{{unit.id}} {{unit.title}}</strong><small>{{unit.subtitle}}</small><div class="bar"><i :style="{width:unit.progress+'%',background:unit.progress===100?'var(--green)':'var(--blue)'}"></i></div></div><em>{{unit.progress}}%</em></div></div></section><section><div class="section-head"><div><h2>我的小数据</h2><p>坚持比速度更重要</p></div></div><div class="panel"><div class="stats"><div class="stat"><b>{{learned}}</b><span>已学单词</span></div><div class="stat"><b>{{accuracy}}%</b><span>练习正确率</span></div><div class="stat"><b>{{minutes}}</b><span>本周分钟</span></div><div class="stat"><b>{{badges}}</b><span>获得徽章</span></div></div><p class="report-note">{{reportTip}}</p></div></section></div></template>
   <template v-else-if="view==='course'"><section class="course-view"><div class="course-head"><div><h1>教材地图</h1><p>PEP 三年级上册 · 2024 年 7 月第 1 版</p></div><select class="select-like"><option>三年级上册</option></select></div><div class="unit-tabs"><button v-for="(unit,i) in units" :key="unit.id" class="unit-tab" :class="{active:selectedUnit===i}" @click="selectedUnit=i"><b>{{unit.id}}</b><span>{{unit.title}}</span></button></div><div class="parts"><article v-for="part in activeUnit.parts" :key="part.id" class="part-card"><div><h3>{{part.id}} <span style="color:var(--coral)">·</span> {{part.title}}</h3><p>{{part.desc}}</p></div><div class="lesson-list"><div v-for="lesson in part.lessons" :key="lesson" class="lesson"><span>{{lesson}}</span><button @click="startTask('lesson')">开始 →</button></div></div></article></div><section class="unit-content"><div class="content-heading"><div><h2>本单元全部词汇</h2><p>点击喇叭可听发音，已全部加入听力和小测</p></div><p>{{activeUnit.words.length}} 个词汇</p></div><div class="word-grid"><div v-for="word in activeUnit.words" :key="word[0]" class="word-item"><b>{{word[0]}}</b><span>{{word[1]}}</span><button class="word-sound" @click="speak(word[0])" :aria-label="'播放 '+word[0]">▶</button></div></div></section><section class="unit-content"><div class="content-heading"><div><h2>教材人物与核心句型</h2><p>人物姓名和教材对话均可点击跟读</p></div><p>{{activeUnit.people.length}} 位人物 · {{activeUnit.sentences.length}} 个句型</p></div><div class="people-row"><button v-for="person in activeUnit.people" :key="person[0]" class="person-chip" @click="speak(person[0])"><span>▶</span><div><b>{{person[0]}}</b><span>{{person[1]}}</span></div></button></div><div class="sentence-list"><button v-for="sentence in activeUnit.sentences" :key="sentence[0]" class="sentence-item" @click="speak(sentence[0])"><i>▶</i><span><b>{{sentence[0]}}</b><span>{{sentence[1]}}</span></span></button></div></section></section></template>
   <template v-else-if="view==='practice'">
@@ -89,7 +90,7 @@
       <header class="reward-head"><div><h1>我的奖励站</h1><p>认真学习获得星星积分，兑换后由家长确认。</p></div><div class="points-total"><b>{{points}}</b><div><strong>可用积分</strong><span>每一次进步都会记录</span></div></div></header>
       <div v-if="rewardNotice" class="reward-notice">{{rewardNotice}}</div>
       <div class="earn-strip"><div class="earn-item"><b>答对一题 +2</b><span>认真思考有收获</span></div><div class="earn-item"><b>跟读通过 +3</b><span>勇敢开口更重要</span></div><div class="earn-item"><b>完成一组 +5</b><span>坚持完成小目标</span></div><div class="earn-item"><b>花园通关 +15</b><span>知识和策略双挑战</span></div></div>
-      <section class="reward-section"><h2>可以兑换</h2><p>孩子先申请，家长确认时才扣除积分。</p><div class="reward-grid"><article v-for="reward in rewardCatalog" :key="reward.id" class="reward-card"><span class="reward-icon">{{reward.icon}}</span><h3>{{reward.title}}</h3><p>{{reward.desc}}</p><footer><span class="reward-cost">★ {{reward.cost}}</span><button :disabled="points<reward.cost||hasPendingReward(reward.id)" @click="requestReward(reward)">{{hasPendingReward(reward.id)?'等待确认':points<reward.cost?'积分不足':'申请兑换'}}</button></footer></article></div></section>
+      <section class="reward-section"><h2>可以兑换</h2><p>孩子先申请，家长确认时才扣除积分。</p><div class="reward-grid"><article v-for="reward in rewardCatalog" :key="reward.id" class="reward-card"><span class="reward-icon">{{reward.icon}}</span><h3>{{reward.title}}</h3><p>{{reward.desc}}</p><footer><span class="reward-cost">★ {{reward.cost}}</span><button :disabled="points < reward.cost || hasPendingReward(reward.id)" @click="requestReward(reward)">{{rewardButtonLabel(reward)}}</button></footer></article></div></section>
       <section class="reward-section"><h2>家长确认</h2><p>确认后扣分并兑现约定；拒绝不会扣分。</p><div v-if="!redemptions.length" class="empty">还没有兑换申请</div><div v-else class="approval-list"><div v-for="item in redemptions" :key="item.id" class="approval"><div><strong>{{item.title}} · ★ {{item.cost}}</strong><small>{{item.createdAt}}</small></div><div v-if="item.status==='pending'" class="approval-actions"><button class="deny" @click="rejectReward(item)">暂不兑换</button><button @click="approveReward(item)">家长确认</button></div><span v-else class="approval-status">{{item.status==='approved'?'已确认':'已取消'}}</span></div></div></section>
     </section>
   </template>
@@ -290,11 +291,11 @@ createApp({
     const points = ref(Number.isFinite(savedState.points) ? savedState.points : 60);
     const rewardNotice = ref('');
     const rewardCatalog = [
-      {id:'tv',icon:'📺',title:'看电视 30 分钟',desc:'完成当天任务后，观看一次家长同意的节目。',cost:60},
-      {id:'phone',icon:'📱',title:'玩手机 20 分钟',desc:'在约定时间内玩一次家长同意的游戏。',cost:100},
+      {id:'tv',icon:'📺',title:'看电视 30 分钟',desc:'完成当天任务后，观看一次家长同意的节目。',cost:120},
+      {id:'phone',icon:'📱',title:'玩手机 20 分钟',desc:'在约定时间内玩一次家长同意的游戏。',cost:280},
       {id:'outing',icon:'🎡',title:'出去玩一次',desc:'由孩子提出地点，和家长约定周末出行。',cost:180},
-      {id:'request',icon:'💬',title:'提一个小要求',desc:'可以提出一个合理愿望，具体内容由家长确认。',cost:240},
-      {id:'cash',icon:'💵',title:'兑换 10 元零花钱',desc:'家长确认后兑现，可存入孩子的零花钱账户。',cost:300}
+      {id:'request',icon:'💬',title:'提一个小要求',desc:'可以提出一个合理愿望，具体内容由家长确认。',cost:600},
+      {id:'cash',icon:'💵',title:'兑换 10 元零花钱',desc:'家长确认后兑现，可存入孩子的零花钱账户。',cost:1200}
     ];
     const redemptions = ref(Array.isArray(savedState.redemptions) ? savedState.redemptions : []);
     const speechRate = ref(.8);
@@ -405,6 +406,10 @@ createApp({
     }
     function hasPendingReward(rewardId) {
       return redemptions.value.some(item => item.rewardId === rewardId && item.status === 'pending');
+    }
+    function rewardButtonLabel(reward) {
+      if (hasPendingReward(reward.id)) return '等待确认';
+      return points.value < reward.cost ? '积分不足' : '申请兑换';
     }
     function requestReward(reward) {
       if (points.value < reward.cost || hasPendingReward(reward.id)) return;
@@ -813,7 +818,7 @@ createApp({
       learned,minutes,badges,accuracy,points,rewardCatalog,redemptions,rewardNotice,skills,mistakes,reportTip,speechRate,voiceOptions,
       selectedVoiceName,speechSupported,speechPhase,speechBusy,speechButtonLabel,isListening,recognizedText,speechMessage,speechDetail,
       speechPassed,speechResultClass,coachState,coachLabel,coachLine,openUnit,startToday,startTask,switchMode,answer,nextQuiz,
-      speak,toggleListening,confirmPractice,leavePractice,hasPendingReward,requestReward,approveReward,rejectReward
+      speak,toggleListening,confirmPractice,leavePractice,hasPendingReward,rewardButtonLabel,requestReward,approveReward,rejectReward
     };
   }
 }).mount('#app');
