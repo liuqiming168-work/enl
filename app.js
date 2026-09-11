@@ -95,7 +95,9 @@
     speechPhase: 'idle',
     speechResults: [],
     speechTimer: null,
-    speechGuard: null
+    speechGuard: null,
+    speechStartedAt: 0,
+    speechRetryCount: 0
   };
 
   function dayKey() {
@@ -377,7 +379,7 @@
 
   function renderWord() {
     const item = currentWord();
-    state.picked = [];
+    state.picked = Array(cleanLetters(item.text).length).fill(null);
     state.wordAttempts = 0;
     state.letterPool = makeLetterPool(item);
     showObject(item);
@@ -388,7 +390,6 @@
     $('#word-hint').hidden = true;
     $('#word-speak').hidden = true;
     $('#word-next').hidden = true;
-    $('#word-check').hidden = false;
     $('#letters').innerHTML = state.letterPool.map(item => `<button class="letter" data-letter-id="${item.id}">${item.letter}</button>`).join('');
     const interactionTip = '电脑悬停试听，手机点击试听并选入。';
     $('#spell-instruction').textContent = item.kind === 'person'
@@ -404,10 +405,13 @@
     $('#slots').innerHTML = Array.from({ length: target.length }, (_, index) => {
       const picked = state.picked[index];
       const resultClass = state.wordAttempts >= 2 && picked ? (picked.letter === target[index] ? ' correct-position' : ' wrong-position') : '';
-      return `<span class="slot${resultClass}">${picked?.letter || ''}</span>`;
+      const locked = state.wordAttempts >= 2 && picked?.letter === target[index];
+      return picked
+        ? `<button class="slot${resultClass}" data-picked-letter="${index}" ${locked ? 'disabled' : ''} title="点击放回字母区">${picked.letter}</button>`
+        : '<span class="slot"></span>';
     }).join('');
     $$('[data-letter-id]').forEach(button => {
-      button.disabled = state.picked.some(item => item.id === Number(button.dataset.letterId));
+      button.disabled = state.picked.some(item => item?.id === Number(button.dataset.letterId));
     });
   }
 
@@ -417,7 +421,7 @@
 
   function resetSentence() {
     const tokens = sentenceTokens();
-    state.sentencePicked = [];
+    state.sentencePicked = Array(tokens.length).fill(null);
     state.sentenceAttempts = 0;
     if (tokens.length === 1) {
       const fillers = ['Hello!', 'Thanks.', 'Goodbye!'].filter(word => word !== tokens[0]).slice(0, 2);
@@ -433,7 +437,6 @@
     $('#sentence-reveal').hidden = true;
     $('#sentence-hint').hidden = true;
     $('#sentence-next').hidden = true;
-    $('#sentence-check').hidden = false;
     showScene(currentSentence());
     renderSentence();
     syncPickerPage(state.sentence);
@@ -443,15 +446,17 @@
   function renderSentence() {
     const tokens = sentenceTokens();
     $('#sentence-slots').innerHTML = Array.from({ length: tokens.length }, (_, index) => state.sentencePicked[index]
-      ? `<button class="sentence-slot filled${state.sentenceAttempts >= 2 ? (state.sentencePicked[index].word === tokens[index] ? ' correct-position' : ' wrong-position') : ''}" data-used-token="${index}">${state.sentencePicked[index].word}</button>`
+      ? `<button class="sentence-slot filled${state.sentenceAttempts >= 2 ? (state.sentencePicked[index].word === tokens[index] ? ' correct-position' : ' wrong-position') : ''}" data-used-token="${index}" ${state.sentenceAttempts >= 2 && state.sentencePicked[index].word === tokens[index] ? 'disabled' : ''} title="点击放回单词区">${state.sentencePicked[index].word}</button>`
       : '<span class="sentence-slot"></span>').join('');
-    $('#sentence-bank').innerHTML = state.sentencePool.map(item => `<button class="word-chip" data-token-id="${item.id}" ${state.sentencePicked.some(used => used.id === item.id) ? 'disabled' : ''}>${item.word}</button>`).join('');
+    $('#sentence-bank').innerHTML = state.sentencePool.map(item => `<button class="word-chip" data-token-id="${item.id}" ${state.sentencePicked.some(used => used?.id === item.id) ? 'disabled' : ''}>${item.word}</button>`).join('');
   }
 
   function resetSpeech() {
     clearTimeout(state.speechTimer);
     clearTimeout(state.speechGuard);
     state.speechPhase = 'idle';
+    state.speechStartedAt = 0;
+    state.speechRetryCount = 0;
     $('#speech-status').hidden = true;
     $('#speech-status').className = 'speech-status';
     $('#speak-start').classList.remove('listening');
@@ -746,13 +751,14 @@
     state.recognitionEngine = 'browser';
     state.speechResults = [];
     recognition.lang = 'en-US';
-    recognition.continuous = false;
+    recognition.continuous = /Android/i.test(navigator.userAgent);
     recognition.interimResults = true;
     recognition.maxAlternatives = 5;
     recognition.onstart = () => {
       if (session !== state.speechSession) return;
       clearTimeout(state.speechGuard);
       state.speechPhase = 'listening';
+      state.speechStartedAt = Date.now();
       $('#speech-title').textContent = '正在听你朗读';
       $('#speech-detail').textContent = '读完后点击“我读完了”。';
       $('#speak-start').classList.add('listening');
@@ -771,15 +777,30 @@
     };
     recognition.onerror = event => {
       if (session !== state.speechSession || event.error === 'aborted') return;
+      const endedTooSoon = Date.now() - state.speechStartedAt < 2500;
+      if (event.error === 'no-speech' && endedTooSoon && state.speechRetryCount < 1) return;
       const denied = event.error === 'not-allowed' || event.error === 'service-not-allowed';
       const network = event.error === 'network';
       showSpeechResult(false, denied ? '麦克风权限没有开启' : network ? '语音服务暂时不可用' : '这次没有听清', denied ? '请在浏览器中允许使用麦克风。' : network ? '安卓 Chrome 需要联网调用语音识别服务，请检查网络后重试。' : '请靠近麦克风再读一次。');
     };
     recognition.onend = () => {
       if (session !== state.speechSession || state.speechPhase === 'result') return;
-      state.speechResults.length
-        ? evaluateSpeech(state.speechResults)
-        : showSpeechResult(false, '没有听到有效内容', '点击后约 1 秒开始，请大声读完整句子。');
+      if (state.speechResults.length) {
+        evaluateSpeech(state.speechResults);
+        return;
+      }
+      const endedTooSoon = state.speechPhase === 'listening' && Date.now() - state.speechStartedAt < 2500;
+      if (endedTooSoon && state.speechRetryCount < 1) {
+        state.speechRetryCount += 1;
+        state.speechPhase = 'preparing';
+        $('#speech-title').textContent = '麦克风正在稳定…';
+        $('#speech-detail').textContent = '请等待“正在听”后再开始读。';
+        $('#speak-start').classList.remove('listening');
+        $('#speak-start').textContent = '正在重试…';
+        setTimeout(() => beginRecognizer(session), 700);
+        return;
+      }
+      showSpeechResult(false, '语音服务未能保持连接', /Android/i.test(navigator.userAgent) ? '请确认 Chrome 可以使用麦克风，并关闭占用麦克风的其他应用后重试。' : '请靠近麦克风再读一次。');
     };
     try {
       recognition.start();
@@ -827,7 +848,7 @@
           if (session !== state.speechSession) return;
           if (error.code === 'SERVICE_UNAVAILABLE' && SpeechRecognition) {
             state.recognitionEngine = null;
-            beginRecognizer(session);
+            startBrowserFallback(session);
             return;
           }
           const quota = Number(error.code) === 11201 || Number(error.code) === 42306;
@@ -841,6 +862,15 @@
       showSpeechResult(false, '讯飞评测没有启动', error.message || '请检查配置后重试。');
       return true;
     }
+  }
+
+  async function startBrowserFallback(session) {
+    if (!SpeechRecognition) {
+      showSpeechResult(false, '当前浏览器不支持语音识别', /Android/i.test(navigator.userAgent) ? '请使用最新版 Android Chrome 打开。' : '请使用最新版 Chrome 或 Edge 打开。');
+      return;
+    }
+    if (!await microphoneReady(session) || session !== state.speechSession) return;
+    beginRecognizer(session);
   }
 
   async function startRecognition() {
@@ -865,14 +895,9 @@
     $('#speech-detail').textContent = '约 1 秒后开始。';
     $('#speech-heard').textContent = '';
     $('#speak-start').textContent = '准备开始…';
-    if (!await microphoneReady(session)) return;
     setTimeout(async () => {
       if (await beginXfyunEvaluation(session)) return;
-      if (!SpeechRecognition) {
-        showSpeechResult(false, '当前浏览器不支持语音识别', /Android/i.test(navigator.userAgent) ? '请使用最新版 Android Chrome 打开。' : '请使用最新版 Chrome 或 Edge 打开。');
-        return;
-      }
-      beginRecognizer(session);
+      startBrowserFallback(session);
     }, 1000);
   }
 
@@ -886,33 +911,86 @@
   function showWordError(message) {
     const feedback = $('#word-feedback');
     feedback.className = 'feedback bad';
-    feedback.textContent = message;
+    feedback.textContent = `❌ ${message}`;
     replayClass(feedback, 'pop');
     replayClass($('#slots'), 'wrong-attempt', 340);
-    const check = $('#word-check');
-    check.disabled = true;
-    check.textContent = '再想想';
-    replayClass(check, 'try-again');
-    setTimeout(() => {
-      check.disabled = false;
-      check.textContent = '检查';
-    }, 480);
   }
 
   function showSentenceError(message) {
     const feedback = $('#sentence-feedback');
     feedback.className = 'feedback bad';
-    feedback.textContent = message;
+    feedback.textContent = `❌ ${message}`;
     replayClass(feedback, 'pop');
     replayClass($('#sentence-slots'), 'wrong-attempt', 340);
-    const check = $('#sentence-check');
-    check.disabled = true;
-    check.textContent = '再想想';
-    replayClass(check, 'try-again');
-    setTimeout(() => {
-      check.disabled = false;
-      check.textContent = '检查';
-    }, 480);
+  }
+
+  function evaluateWordArrangement() {
+    if (!state.picked.every(Boolean) || !$('#word-next').hidden) return;
+    const answer = state.picked.map(item => item.letter).join('');
+    const target = cleanLetters(currentWord().text);
+    if (answer !== target) {
+      state.wordAttempts += 1;
+      renderSlots();
+      if (state.wordAttempts === 1) {
+        showWordError('还没有拼对，点击上方字母放回去再试。');
+      } else if (state.wordAttempts === 2) {
+        const correctCount = state.picked.filter((item, index) => item.letter === target[index]).length;
+        showWordError(correctCount ? '绿色位置已经放对，点击橙色字母调整。' : '字母都选齐了，再调整一下顺序。');
+      } else if (state.wordAttempts === 3) {
+        showWordError(`提示：这个单词以“${target[0].toUpperCase()}”开头。`);
+        playText(currentWord().text);
+      } else {
+        $('#word-hint').hidden = false;
+        showWordError('还没拼对，可以看看提示。');
+      }
+      return;
+    }
+    const alreadyDone = isDone('spell', state.word);
+    $('#word-feedback').className = 'feedback good';
+    $('#word-feedback').textContent = alreadyDone ? '✅ 拼对了！这个单词已经掌握。' : '✅ 拼对了！获得 2 积分。';
+    $('#word-answer').textContent = currentWord().text;
+    $('#word-reveal').hidden = false;
+    $('#word-hint').hidden = true;
+    $('#word-speak').hidden = false;
+    $('#word-next').hidden = false;
+    award('spell', state.word, 2);
+    renderPicker();
+    playText(currentWord().text);
+  }
+
+  function evaluateSentenceArrangement() {
+    if (!state.sentencePicked.every(Boolean) || !$('#sentence-next').hidden) return;
+    const answer = state.sentencePicked.map(item => item.word).join(' ');
+    const target = currentSentence().text;
+    const tokens = sentenceTokens();
+    if (answer !== target) {
+      state.sentenceAttempts += 1;
+      renderSentence();
+      if (state.sentenceAttempts === 1) {
+        showSentenceError('顺序还不对，点击上方单词放回去再试。');
+      } else if (state.sentenceAttempts === 2) {
+        const correctCount = state.sentencePicked.filter((item, index) => item.word === tokens[index]).length;
+        showSentenceError(correctCount ? '绿色单词位置正确，点击橙色单词调整。' : '单词都选对了，再调整一下顺序。');
+      } else if (state.sentenceAttempts === 3) {
+        showSentenceError(`提示：句子以“${tokens[0]}”开头。`);
+        playText(currentSentence().text);
+      } else {
+        $('#sentence-hint').hidden = false;
+        showSentenceError('还没排对，可以看看提示。');
+      }
+      return;
+    }
+    const alreadyDone = isDone('sentence', state.sentence);
+    $('#sentence-feedback').className = 'feedback good';
+    $('#sentence-feedback').textContent = alreadyDone ? '✅ 顺序正确！这句话已经掌握。' : '✅ 顺序正确！获得 2 积分。';
+    $('#sentence-answer').textContent = currentSentence().text;
+    $('#sentence-meaning').textContent = currentSentence().meaning;
+    $('#sentence-reveal').hidden = false;
+    $('#sentence-hint').hidden = true;
+    $('#sentence-next').hidden = false;
+    award('sentence', state.sentence, 2);
+    renderPicker();
+    playText(currentSentence().text);
   }
 
   function bindEvents() {
@@ -932,9 +1010,10 @@
       const button = event.target.closest('[data-letter-id]');
       if (!button || button.disabled || button.contains(event.relatedTarget)) return;
       const item = state.letterPool.find(letter => letter.id === Number(button.dataset.letterId));
-      if (!item || state.picked.length >= cleanLetters(currentWord().text).length) return;
+      const openIndex = state.picked.findIndex(picked => !picked);
+      if (!item || openIndex < 0) return;
       if (Date.now() - Number(button.dataset.previewedAt || 0) < 3000) return;
-      const sound = spellingSound(currentWord(), state.picked.length, item.letter);
+      const sound = spellingSound(currentWord(), openIndex, item.letter);
       if (sound) {
         button.dataset.previewedAt = Date.now();
         playPhoneme(sound, button, item.letter, () => {
@@ -947,57 +1026,34 @@
     });
     $('#letters').addEventListener('click', event => {
       const button = event.target.closest('[data-letter-id]');
-      if (!button || state.picked.length >= cleanLetters(currentWord().text).length) return;
+      const position = state.picked.findIndex(picked => !picked);
+      if (!button || position < 0 || !$('#word-next').hidden) return;
       const item = state.letterPool.find(letter => letter.id === Number(button.dataset.letterId));
       if (item) {
-        const position = state.picked.length;
-        state.picked.push(item);
+        state.picked[position] = item;
         const sound = spellingSound(currentWord(), position, item.letter);
         const justPreviewed = Date.now() - Number(button.dataset.previewedAt || 0) < 3000;
         if (sound && !justPreviewed) playPhoneme(sound, null, item.letter);
       }
       renderSlots();
+      evaluateWordArrangement();
     });
-    $('#word-undo').addEventListener('click', () => { state.picked.pop(); renderSlots(); });
-    $('#word-listen').addEventListener('click', () => playText(currentWord().text));
-    $('#word-check').addEventListener('click', () => {
-      const answer = state.picked.map(item => item.letter).join('');
-      const target = cleanLetters(currentWord().text);
-      const good = answer === target;
-      if (!good) {
-        if (answer.length < target.length) {
-          showWordError('还有字母没有选完。');
-          return;
-        }
-        state.wordAttempts += 1;
-        renderSlots();
-        if (state.wordAttempts === 1) {
-          showWordError('还没有拼对，再检查字母和顺序。');
-        } else if (state.wordAttempts === 2) {
-          const correctCount = state.picked.filter((item, index) => item.letter === target[index]).length;
-          showWordError(correctCount ? '绿色位置已经放对了，调整橙色位置。' : '字母都选齐了，再调整一下顺序。');
-        } else if (state.wordAttempts === 3) {
-          showWordError(`提示：这个单词以“${target[0].toUpperCase()}”开头。再听一次。`);
-          playText(currentWord().text);
-        } else {
-          $('#word-hint').hidden = false;
-          showWordError('还没拼对，可以点“看看提示”，再自己完成。');
-        }
-        return;
+    $('#slots').addEventListener('click', event => {
+      const button = event.target.closest('[data-picked-letter]');
+      if (!button || button.disabled || !$('#word-next').hidden) return;
+      state.picked[Number(button.dataset.pickedLetter)] = null;
+      renderSlots();
+    });
+    $('#word-undo').addEventListener('click', () => {
+      if (!$('#word-next').hidden) return;
+      for (let index = state.picked.length - 1; index >= 0; index -= 1) {
+        if (!state.picked[index]) continue;
+        state.picked[index] = null;
+        break;
       }
-      const alreadyDone = isDone('spell', state.word);
-      $('#word-feedback').className = 'feedback good';
-      $('#word-feedback').textContent = alreadyDone ? '拼对了！这个单词已经掌握。' : '拼对了！获得 2 积分。';
-      $('#word-answer').textContent = currentWord().text;
-      $('#word-reveal').hidden = false;
-      $('#word-hint').hidden = true;
-      $('#word-speak').hidden = false;
-      $('#word-next').hidden = false;
-      $('#word-check').hidden = true;
-      award('spell', state.word, 2);
-      renderPicker();
-      playText(currentWord().text);
+      renderSlots();
     });
+    $('#word-listen').addEventListener('click', () => playText(currentWord().text));
     $('#word-hint').addEventListener('click', () => {
       $('#word-answer').textContent = currentWord().text;
       $('#word-reveal').hidden = false;
@@ -1013,57 +1069,21 @@
     $('#word-next').addEventListener('click', () => { state.word = (state.word + 1) % wordItems().length; renderWord(); });
     $('#sentence-bank').addEventListener('click', event => {
       const button = event.target.closest('[data-token-id]');
-      if (!button || state.sentencePicked.length >= sentenceTokens().length) return;
+      const position = state.sentencePicked.findIndex(item => !item);
+      if (!button || position < 0 || !$('#sentence-next').hidden) return;
       const item = state.sentencePool.find(token => token.id === Number(button.dataset.tokenId));
-      if (item) state.sentencePicked.push(item);
+      if (item) state.sentencePicked[position] = item;
       renderSentence();
+      evaluateSentenceArrangement();
     });
     $('#sentence-slots').addEventListener('click', event => {
       const button = event.target.closest('[data-used-token]');
-      if (!button) return;
-      state.sentencePicked.splice(Number(button.dataset.usedToken), 1);
+      if (!button || button.disabled || !$('#sentence-next').hidden) return;
+      state.sentencePicked[Number(button.dataset.usedToken)] = null;
       renderSentence();
     });
     $('#sentence-listen').addEventListener('click', () => playText(currentSentence().text));
     $('#sentence-reset').addEventListener('click', resetSentence);
-    $('#sentence-check').addEventListener('click', () => {
-      const answer = state.sentencePicked.map(item => item.word).join(' ');
-      const good = answer === currentSentence().text;
-      const tokens = sentenceTokens();
-      if (!good) {
-        if (state.sentencePicked.length < tokens.length) {
-          showSentenceError('句子还没有组装完整。');
-          return;
-        }
-        state.sentenceAttempts += 1;
-        renderSentence();
-        if (state.sentenceAttempts === 1) {
-          showSentenceError('顺序还不对，再听一遍短句。');
-        } else if (state.sentenceAttempts === 2) {
-          const correctCount = state.sentencePicked.filter((item, index) => item.word === tokens[index]).length;
-          showSentenceError(correctCount ? '绿色单词位置正确，调整橙色位置。' : '单词都选对了，再调整一下顺序。');
-        } else if (state.sentenceAttempts === 3) {
-          showSentenceError(`提示：句子以“${tokens[0]}”开头。再听一次。`);
-          playText(currentSentence().text);
-        } else {
-          $('#sentence-hint').hidden = false;
-          showSentenceError('还没排对，可以点“看看提示”，再自己完成。');
-        }
-        return;
-      }
-      const alreadyDone = isDone('sentence', state.sentence);
-      $('#sentence-feedback').className = 'feedback good';
-      $('#sentence-feedback').textContent = alreadyDone ? '顺序正确！这句话已经掌握。' : '顺序正确！获得 2 积分。';
-      $('#sentence-answer').textContent = currentSentence().text;
-      $('#sentence-meaning').textContent = currentSentence().meaning;
-      $('#sentence-reveal').hidden = false;
-      $('#sentence-hint').hidden = true;
-      $('#sentence-next').hidden = false;
-      $('#sentence-check').hidden = true;
-      award('sentence', state.sentence, 2);
-      renderPicker();
-      playText(currentSentence().text);
-    });
     $('#sentence-hint').addEventListener('click', () => {
       $('#sentence-answer').textContent = currentSentence().text;
       $('#sentence-meaning').textContent = currentSentence().meaning;

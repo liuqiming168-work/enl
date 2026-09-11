@@ -88,6 +88,8 @@ button:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
 .slots, .letters, .sentence-slots, .sentence-bank { display: flex; flex-wrap: wrap; gap: 7px; }
 .slots { margin-bottom: 13px; }
 .slot { width: 39px; height: 46px; border-bottom: 3px solid #87979d; display: grid; place-items: center; font-size: 21px; font-weight: 900; }
+.slot[data-picked-letter] { cursor: pointer; }
+.slot:disabled { cursor: default; opacity: 1; }
 .slot.correct-position { color: #287952; border-color: var(--green); background: #e6f4eb; }
 .slot.wrong-position { color: #a45415; border-color: #efa44f; background: #fff1d9; }
 .slots.wrong-attempt { animation: wrong-shake .32s ease-in-out; }
@@ -112,6 +114,7 @@ button:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
 .sentence-slots { flex-wrap: nowrap; margin: 13px 0; overflow-x: auto; padding-bottom: 3px; }
 .sentence-slot { height: 46px; flex: 1 0 64px; border: 2px dashed #abb8ba; border-radius: 6px; background: #fafbf9; display: grid; place-items: center; padding: 5px; color: var(--ink); font-size: 11px; font-weight: 900; }
 .sentence-slot.filled { border-style: solid; background: #fff; }
+.sentence-slot:disabled { cursor: default; opacity: 1; }
 .sentence-slot.correct-position { border-color: var(--green); background: #e6f4eb; color: #287952; }
 .sentence-slot.wrong-position { border-color: #efa44f; background: #fff1d9; color: #a45415; }
 .sentence-slots.wrong-attempt { animation: wrong-shake .32s ease-in-out; }

@@ -76,7 +76,7 @@
     emit('onState', 'connecting');
     let response;
     try {
-      response = await fetch('/api/xfyun-auth', { cache: 'no-store' });
+      response = await fetch(window.XFYUN_AUTH_ENDPOINT || '/api/xfyun-auth', { cache: 'no-store' });
     } catch (_) {
       const error = new Error('讯飞签名服务暂时无法连接。');
       error.code = 'SERVICE_UNAVAILABLE';
