@@ -7,6 +7,11 @@
   let recordTimer = null;
   let resultTimer = null;
   let uploadTimer = null;
+  let authTimer = null;
+  let socketTimer = null;
+  let recorderStartTimer = null;
+  let authController = null;
+  let runSequence = 0;
   let audioFrames = [];
   let firstFrame = true;
   let recorderEnded = false;
@@ -67,10 +72,20 @@
   function cleanup(closeSocket = true) {
     clearTimeout(recordTimer);
     clearTimeout(resultTimer);
+    clearTimeout(authTimer);
+    clearTimeout(socketTimer);
+    clearTimeout(recorderStartTimer);
     clearInterval(uploadTimer);
     recordTimer = null;
     resultTimer = null;
+    authTimer = null;
+    socketTimer = null;
+    recorderStartTimer = null;
     uploadTimer = null;
+    if (authController) {
+      authController.abort();
+      authController = null;
+    }
     audioFrames = [];
     firstFrame = true;
     recorderEnded = false;
@@ -148,17 +163,31 @@
 
   async function start({ text, category = 'read_sentence', ...handlers }) {
     cleanup();
+    const runId = ++runSequence;
     callbacks = handlers;
     if (!window.RecorderManager) throw new Error('录音组件加载失败。');
     emit('onState', 'connecting');
     let response;
+    const controller = new AbortController();
+    const authTimeout = setTimeout(() => controller.abort(), 5000);
+    authController = controller;
+    authTimer = authTimeout;
     try {
-      response = await fetch(window.XFYUN_AUTH_ENDPOINT || '/api/xfyun-auth', { cache: 'no-store' });
-    } catch (_) {
-      const error = new Error('讯飞签名服务暂时无法连接。');
+      response = await fetch(window.XFYUN_AUTH_ENDPOINT || '/api/xfyun-auth', {
+        cache: 'no-store',
+        signal: controller.signal
+      });
+    } catch (cause) {
+      const timedOut = cause?.name === 'AbortError';
+      const error = new Error(timedOut ? '连接评测服务超时，请检查网络后重试。' : '讯飞签名服务暂时无法连接。');
       error.code = 'SERVICE_UNAVAILABLE';
       throw error;
+    } finally {
+      clearTimeout(authTimeout);
+      if (authTimer === authTimeout) authTimer = null;
+      if (authController === controller) authController = null;
     }
+    if (runId !== runSequence) return;
     const auth = await response.json().catch(() => ({}));
     if (!response.ok) {
       const error = new Error(auth.error || '讯飞签名服务不可用。');
@@ -169,46 +198,69 @@
     recorder = new RecorderManager(recorderPath);
     socket = new WebSocket(auth.url);
     socket.appId = auth.appId;
+    let failed = false;
+    const fail = error => {
+      if (failed || runId !== runSequence) return;
+      failed = true;
+      if (socket) socket.onerror = null;
+      cleanup();
+      emit('onError', error);
+    };
+    socketTimer = setTimeout(() => {
+      const error = new Error('连接讯飞评测超时，请检查网络后重试。');
+      error.code = 'SERVICE_UNAVAILABLE';
+      fail(error);
+    }, 5000);
     recorder.onStart = () => {
+      if (failed || runId !== runSequence) return;
+      clearTimeout(recorderStartTimer);
+      recorderStartTimer = null;
       emit('onState', 'recording');
       recordTimer = setTimeout(stop, 8000);
     };
     recorder.onFrameRecorded = ({ isLastFrame, frameBuffer }) => {
+      if (failed || runId !== runSequence) return;
       if (frameBuffer?.byteLength) audioFrames.push(frameBuffer);
       if (isLastFrame) recorderEnded = true;
     };
     socket.onopen = async () => {
+      if (failed || runId !== runSequence) return;
+      clearTimeout(socketTimer);
+      socketTimer = null;
       try {
         startUpload(text, category);
+        recorderStartTimer = setTimeout(() => {
+          const error = new Error('麦克风启动超时，请检查浏览器麦克风权限。');
+          error.code = 'RECORDER_TIMEOUT';
+          fail(error);
+        }, 4000);
         await recorder.start({ sampleRate: 16000, frameSize: 1280 });
       } catch (error) {
-        cleanup();
-        emit('onError', error);
+        fail(error);
       }
     };
     socket.onmessage = event => {
+      if (failed || runId !== runSequence) return;
       const responseData = JSON.parse(event.data);
       if (responseData.code !== 0) {
         const error = new Error(responseData.message || `讯飞评测错误 ${responseData.code}`);
         error.code = responseData.code;
-        cleanup();
-        emit('onError', error);
+        fail(error);
         return;
       }
       if (responseData.data?.data) {
         try {
           emit('onResult', parseResult(responseData.data.data));
         } catch (error) {
-          emit('onError', error);
+          fail(error);
         }
       }
       if (responseData.data?.status === 2) cleanup();
     };
     socket.onerror = () => {
-      cleanup(false);
       const error = new Error('讯飞评测连接失败，已切换备用识别。');
       error.code = 'SERVICE_UNAVAILABLE';
-      emit('onError', error);
+      fail(error);
     };
   }
 
@@ -226,5 +278,10 @@
     }
   }
 
-  window.XfyunISE = { start, stop, cancel: cleanup };
+  function cancel() {
+    runSequence += 1;
+    cleanup();
+  }
+
+  window.XfyunISE = { start, stop, cancel };
 })();
