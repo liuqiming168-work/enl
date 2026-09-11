@@ -1,827 +1,177 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>English Quest | 刘劲的英语探险</title>
-<script src="vue.global.prod.js"></script>
-<style>
-:root{--ink:#233044;--muted:#718096;--paper:#fffdf9;--line:#e9e5dc;--coral:#ef705d;--yellow:#f3bd3e;--green:#5eaa78;--blue:#5b91d6;--violet:#8175c9;--shadow:0 18px 50px rgba(35,48,68,.10)}
-*{box-sizing:border-box;margin:0;padding:0} body{min-height:100vh;background:#f3efe7;color:var(--ink);font-family:"Nunito","PingFang SC","Helvetica Neue",Arial,sans-serif}button{font:inherit;border:0;cursor:pointer;color:inherit}button:disabled{cursor:not-allowed;opacity:.48}#app{min-height:100vh}
-.shell{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh;max-width:1540px;margin:0 auto;background:var(--paper)}
-.sidebar{background:#f7f4ed;border-right:1px solid var(--line);padding:28px 18px;display:flex;flex-direction:column;gap:24px}.brand{display:flex;align-items:center;gap:11px;padding:0 10px}.brand-mark{width:42px;height:42px;border-radius:14px;background:var(--coral);color:white;display:grid;place-items:center;font-size:23px;box-shadow:0 8px 18px rgba(239,112,93,.24)}.brand strong{font-size:16px;line-height:1.2}.brand span{display:block;color:var(--muted);font-size:11px;margin-top:3px}.side-label{font-size:11px;color:#9b978e;letter-spacing:1.2px;font-weight:800;padding:0 10px}.main-nav{display:grid;gap:6px}.nav-item{display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:12px;background:transparent;color:#687488;text-align:left;font-size:14px;font-weight:800}.nav-item:hover{background:#eee9df;color:var(--ink)}.nav-item.active{background:#fff;color:var(--coral);box-shadow:0 4px 12px rgba(35,48,68,.07)}.nav-icon{font-size:19px;width:22px;text-align:center}.unit-list{display:grid;gap:5px}.unit-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:10px;text-align:left;background:transparent;color:#687488;font-size:12px}.unit-item:hover{background:#eee9df}.unit-item.active{color:var(--ink);background:#e9f2ec;font-weight:800}.unit-dot{width:8px;height:8px;border-radius:50%;background:#d6d0c5}.unit-item.active .unit-dot{background:var(--green)}.side-bottom{margin-top:auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px}.side-bottom p{font-size:12px;color:var(--muted);line-height:1.5}.side-bottom strong{display:block;margin-bottom:5px;font-size:13px}
-.content{min-width:0;padding:28px 42px 48px;background:#fffdf9}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}.crumb{font-size:12px;color:var(--muted)}.crumb b{color:var(--ink);font-size:14px}.top-actions{display:flex;align-items:center;gap:12px}.streak{display:flex;align-items:center;gap:6px;background:#fff7df;border:1px solid #f3df9e;color:#996b0d;border-radius:20px;padding:7px 12px;font-size:12px;font-weight:900}.parent-btn{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:12px;font-weight:800}.parent-btn:hover{border-color:var(--coral);color:var(--coral)}
-.hero{min-height:300px;border-radius:22px;overflow:hidden;position:relative;background:#f1e9dc url("outputs/learning-adventure.png") right center/auto 100% no-repeat;display:flex;align-items:center;padding:35px 42px;margin-bottom:28px;box-shadow:var(--shadow)}.hero:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,253,249,.98) 0%,rgba(255,253,249,.86) 38%,rgba(255,253,249,.04) 72%)}.hero-copy{position:relative;z-index:1;max-width:390px}.eyebrow{display:inline-flex;align-items:center;gap:6px;color:var(--coral);font-size:12px;font-weight:900;letter-spacing:.5px;margin-bottom:12px}.hero h1{font-size:36px;line-height:1.13;letter-spacing:-.4px;margin-bottom:12px}.hero h1 span{color:var(--coral)}.hero p{font-size:14px;color:#687488;line-height:1.65;margin-bottom:21px}.hero-cta{display:inline-flex;align-items:center;gap:8px;background:var(--coral);color:#fff;padding:12px 18px;border-radius:11px;font-size:14px;font-weight:900;box-shadow:0 8px 16px rgba(239,112,93,.23)}.hero-cta:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(239,112,93,.3)}
-.section-head{display:flex;align-items:end;justify-content:space-between;margin-bottom:14px}.section-head h2{font-size:19px}.section-head p{font-size:12px;color:var(--muted);margin-top:4px}.text-btn{color:var(--coral);background:transparent;font-size:12px;font-weight:900}.task-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:30px}.task-card{border:1px solid var(--line);border-radius:15px;padding:18px;background:#fff;min-height:154px;display:flex;flex-direction:column;justify-content:space-between;transition:.2s}.task-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(35,48,68,.08)}.task-top{display:flex;justify-content:space-between;align-items:start}.task-icon{font-size:25px}.tag{font-size:10px;padding:4px 7px;border-radius:6px;font-weight:900;background:#edf5ef;color:#4e8b62}.tag.warm{background:#fff5dc;color:#a77816}.tag.blue{background:#edf3fc;color:#527eb9}.task-card h3{font-size:15px;margin:8px 0 4px}.task-card p{font-size:12px;color:var(--muted)}.task-action{display:flex;justify-content:space-between;align-items:center;margin-top:13px}.task-action span{font-size:11px;color:#9b978e}.small-action{padding:7px 10px;border-radius:8px;background:#f4f1ea;color:var(--ink);font-size:11px;font-weight:900}.small-action:hover{background:var(--coral);color:#fff}
-.lower-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr);gap:26px}.panel{border:1px solid var(--line);border-radius:16px;background:#fff;padding:19px}.progress-list{display:grid;gap:14px}.progress-row{display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center}.unit-number{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:900}.unit-number.coral{background:var(--coral)}.unit-number.blue{background:var(--blue)}.unit-number.green{background:var(--green)}.unit-number.yellow{background:var(--yellow);color:#6d520b}.progress-row strong{display:block;font-size:13px}.progress-row small{font-size:11px;color:var(--muted)}.bar{height:6px;background:#eeeae3;border-radius:6px;margin-top:7px;overflow:hidden}.bar i{display:block;height:100%;border-radius:6px;background:var(--green)}.progress-row em{font-style:normal;font-size:11px;color:var(--muted);font-weight:800}.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.stat{background:#faf8f3;border-radius:11px;padding:14px}.stat b{display:block;font-size:24px;margin-bottom:3px}.stat span{font-size:11px;color:var(--muted)}.report-note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:15px;padding-top:14px;border-top:1px solid var(--line)}
-.course-view{max-width:1000px}.course-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}.course-head h1{font-size:27px}.course-head p{color:var(--muted);font-size:13px;margin-top:5px}.select-like{background:#fff;border:1px solid var(--line);padding:9px 12px;border-radius:9px;font-size:12px;font-weight:800}.unit-tabs{display:flex;gap:8px;overflow:auto;padding-bottom:4px;margin-bottom:18px}.unit-tab{min-width:120px;text-align:left;border:1px solid var(--line);background:#fff;padding:12px;border-radius:12px}.unit-tab.active{border-color:var(--coral);box-shadow:0 5px 14px rgba(239,112,93,.15)}.unit-tab b{display:block;font-size:12px}.unit-tab span{display:block;color:var(--muted);font-size:11px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.parts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.part-card{border:1px solid var(--line);border-radius:14px;padding:18px;background:#fff;min-height:180px;display:flex;flex-direction:column}.part-card h3{font-size:16px}.part-card p{font-size:12px;color:var(--muted);margin:5px 0 14px;line-height:1.5}.lesson-list{display:grid;gap:7px;margin-top:auto}.lesson{display:flex;align-items:center;justify-content:space-between;background:#faf8f3;border-radius:8px;padding:8px 9px;font-size:11px}.lesson button{background:transparent;color:var(--coral);font-weight:900;font-size:11px}
-.unit-content{margin-top:28px;padding-top:24px;border-top:1px solid var(--line)}.content-heading{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:14px}.content-heading h2{font-size:18px}.content-heading p{font-size:11px;color:var(--muted)}.word-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.word-item{min-height:60px;background:#faf8f3;border:1px solid #f0ece4;border-radius:8px;padding:10px 38px 10px 11px;position:relative}.word-item b{display:block;font-size:13px}.word-item span{display:block;font-size:11px;color:var(--muted);margin-top:4px;line-height:1.35}.word-sound{position:absolute;right:8px;top:9px;width:27px;height:27px;border-radius:50%;background:#eaf1fa;color:var(--blue);font-size:12px}.people-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.person-chip{display:flex;align-items:center;gap:7px;background:#eef6f0;border:1px solid #dbeadd;border-radius:8px;padding:8px 10px;text-align:left}.person-chip b{font-size:12px}.person-chip span{font-size:10px;color:var(--muted)}.sentence-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.sentence-item{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;border-bottom:1px solid #f0ece4;padding:9px 0;text-align:left;background:transparent}.sentence-item i{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:#fff1ed;color:var(--coral);font-style:normal;font-size:11px}.sentence-item b{display:block;font-size:12px}.sentence-item span{display:block;font-size:10px;color:var(--muted);margin-top:3px}
-.practice{max-width:850px}.practice-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.back-btn{background:transparent;color:var(--muted);font-size:12px;font-weight:900}.practice-top h1{font-size:22px}.mode-switch{display:flex;gap:7px;margin-bottom:18px;align-items:center;flex-wrap:wrap}.mode{background:#f2efe8;border-radius:9px;padding:9px 12px;font-size:12px;font-weight:900;color:#768092}.mode.active{background:var(--ink);color:#fff}.quiz-card{border:1px solid var(--line);border-radius:18px;background:#fff;padding:30px;text-align:center;box-shadow:var(--shadow)}.quiz-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;font-weight:800;margin-bottom:20px}.quiz-type{color:var(--coral);font-weight:900;font-size:12px;margin-bottom:9px}.quiz-card h2{font-size:29px;margin-bottom:6px}.phonetic{font-size:16px;color:var(--violet);margin-bottom:9px}.quiz-hint{font-size:14px;color:var(--muted);margin-bottom:22px}.options{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-width:540px;margin:0 auto}.option{border:1px solid var(--line);background:#fffdf9;border-radius:11px;padding:13px;text-align:left;font-size:14px;font-weight:800;display:flex;align-items:center;gap:10px}.option:hover{border-color:var(--blue);background:#f5f9ff}.option.correct{border-color:var(--green);background:#eef8f0;color:#34734a}.option.wrong{border-color:var(--coral);background:#fff0ed;color:#b95143}.option .option-letter{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:#f1eee7;color:#8b887f;font-size:11px}.feedback-box{margin:22px auto 0;max-width:540px;border-radius:11px;padding:12px;font-size:13px;font-weight:800}.feedback-box.good{background:#edf8ef;color:#39764b}.feedback-box.bad{background:#fff1ed;color:#b95143}.quiz-footer{display:flex;justify-content:space-between;align-items:center;margin-top:22px;color:var(--muted);font-size:11px}.sound-btn{background:#eef3fb;color:var(--blue);border-radius:9px;padding:9px 12px;font-size:12px;font-weight:900}.next-btn{background:var(--coral);color:#fff;border-radius:9px;padding:10px 16px;font-size:12px;font-weight:900}.voice-select{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 10px;color:var(--muted);font-size:11px;max-width:210px}
-.speak-actions{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:18px}.mic-btn{min-width:150px;padding:12px 18px;border-radius:11px;background:var(--coral);color:#fff;font-size:13px;font-weight:900;box-shadow:0 8px 18px rgba(239,112,93,.22)}.mic-btn.listening{background:#cf4f42;animation:mic-pulse 1.25s ease-in-out infinite}.mic-btn.unsupported{background:#8d95a3;box-shadow:none}.speech-result{max-width:540px;margin:18px auto 0;padding:16px;border-radius:12px;background:#faf8f3;border:1px solid var(--line);text-align:left}.speech-result.good{background:#edf8ef;border-color:#b9ddc2}.speech-result.bad{background:#fff1ed;border-color:#f0c3bb}.speech-result strong{display:block;font-size:14px;margin-bottom:5px}.speech-result p{font-size:12px;color:var(--muted);line-height:1.55}.heard-text{margin-top:8px;color:var(--ink)!important}.speech-note{font-size:10px;color:#9b978e;margin-top:12px}.wave{display:inline-flex;align-items:center;gap:3px;height:16px;margin-right:6px}.wave i{display:block;width:3px;height:6px;border-radius:3px;background:currentColor;animation:wave .8s ease-in-out infinite}.wave i:nth-child(2){animation-delay:.15s}.wave i:nth-child(3){animation-delay:.3s}@keyframes wave{50%{height:16px}}@keyframes mic-pulse{50%{box-shadow:0 0 0 8px rgba(239,112,93,.14)}}
-.coach-stage{height:230px;max-width:680px;margin:0 auto 22px;border-radius:14px;position:relative;overflow:hidden;background:#dceee9 url("outputs/red-panda-coach.png") center/cover no-repeat;text-align:left;box-shadow:inset 0 0 0 1px rgba(35,48,68,.08)}.coach-stage:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.93),rgba(255,255,255,.72) 42%,rgba(255,255,255,0) 67%);pointer-events:none}.coach-bubble{position:absolute;z-index:2;left:24px;top:50%;transform:translateY(-50%);width:min(43%,270px);background:#fff;border:2px solid var(--ink);border-radius:14px;padding:15px 17px;box-shadow:5px 6px 0 rgba(35,48,68,.12)}.coach-bubble:after{content:"";position:absolute;right:-12px;top:48%;width:20px;height:20px;background:#fff;border-top:2px solid var(--ink);border-right:2px solid var(--ink);transform:rotate(45deg)}.coach-bubble small{display:block;color:var(--coral);font-weight:900;font-size:10px;margin-bottom:5px}.coach-bubble strong{display:block;font-size:17px;line-height:1.35}.coach-stage.talking{animation:coach-talk .55s ease-in-out infinite alternate}.coach-stage.listening{animation:coach-listen 1.4s ease-in-out infinite}.coach-stage.correct{animation:coach-celebrate .45s ease-in-out 3}.coach-stage.retry{animation:coach-retry .55s ease-in-out 2}.coach-stage.talking .coach-bubble,.coach-stage.listening .coach-bubble{box-shadow:5px 6px 0 rgba(91,145,214,.22)}.coach-stage.correct .coach-bubble{border-color:var(--green);box-shadow:5px 6px 0 rgba(94,170,120,.23)}.coach-stage.retry .coach-bubble{border-color:var(--yellow);box-shadow:5px 6px 0 rgba(243,189,62,.25)}@keyframes coach-talk{to{background-size:101.5%;background-position:50% 49%}}@keyframes coach-listen{50%{filter:saturate(1.07);background-position:51% center}}@keyframes coach-celebrate{50%{transform:translateY(-5px) rotate(.4deg)}}@keyframes coach-retry{35%{transform:translateX(-3px)}70%{transform:translateX(3px)}}
-.report{max-width:920px}.report h1{font-size:27px;margin-bottom:4px}.report>p{font-size:13px;color:var(--muted);margin-bottom:20px}.report-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.report-stat{border:1px solid var(--line);border-radius:13px;background:#fff;padding:16px}.report-stat b{font-size:25px;display:block}.report-stat span{font-size:11px;color:var(--muted)}.report-panel{border:1px solid var(--line);border-radius:15px;background:#fff;padding:19px;margin-bottom:15px}.report-panel h2{font-size:16px;margin-bottom:15px}.skill-row{display:grid;grid-template-columns:60px 1fr 45px;gap:10px;align-items:center;margin:12px 0;font-size:12px}.skill-row .bar{margin:0}.skill-row b{text-align:right;font-size:12px}.mistake{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #f0ede7}.mistake:last-child{border-bottom:0}.mistake strong{font-size:13px}.mistake span{display:block;color:var(--muted);font-size:11px;margin-top:3px}.review-btn{background:#fff4df;color:#a27112;padding:7px 10px;border-radius:8px;font-size:11px;font-weight:900}
-.empty{text-align:center;color:var(--muted);padding:35px;font-size:13px}.mobile-menu{display:none}
-@media(max-width:900px){.shell{grid-template-columns:1fr}.sidebar{display:none}.content{padding:20px 18px 40px}.mobile-menu{display:block;background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:16px}.topbar{gap:10px}.hero{padding:28px 24px;background-position:65% center}.hero h1{font-size:30px}.lower-grid{grid-template-columns:1fr}.task-grid{grid-template-columns:repeat(3,1fr)}.word-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:620px){.topbar{align-items:start}.crumb{padding-top:9px}.top-actions{gap:6px}.parent-btn{font-size:11px;padding:7px 8px}.streak{padding:7px 8px}.hero{min-height:360px;align-items:start;padding:25px 20px;background-size:auto 62%;background-position:center bottom}.hero:after{background:linear-gradient(180deg,rgba(255,253,249,.98) 0%,rgba(255,253,249,.78) 47%,rgba(255,253,249,.05) 85%)}.hero-copy{max-width:none}.hero h1{font-size:29px}.task-grid{grid-template-columns:1fr;gap:10px}.task-card{min-height:126px}.parts{grid-template-columns:1fr}.word-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sentence-list{grid-template-columns:1fr}.content-heading{align-items:start;flex-direction:column;gap:4px}.options{grid-template-columns:1fr}.quiz-card{padding:18px 12px}.quiz-card h2{font-size:25px}.coach-stage{height:205px;background-position:58% center}.coach-stage:after{background:linear-gradient(90deg,rgba(255,255,255,.92),rgba(255,255,255,.5) 49%,transparent 70%)}.coach-bubble{left:12px;width:47%;padding:11px}.coach-bubble strong{font-size:14px}.report-grid{grid-template-columns:repeat(2,1fr)}.course-head h1{font-size:23px}}
-</style>
-<style>
-.coach-stage{background-image:url("outputs/tiger-coach-demo.png")!important;background-color:#e4f6e9;background-position:75% 48%;background-size:auto 122%;background-repeat:no-repeat;transition:background-image .18s ease}
-.coach-stage.talking{background-image:url("outputs/tiger-coach-talking.png")!important}
-.coach-stage.listening{background-image:url("outputs/tiger-coach-listening.png")!important}
-.coach-stage.correct{background-image:url("outputs/tiger-coach-correct.png")!important}
-.coach-stage.retry{background-image:url("outputs/tiger-coach-retry.png")!important}
-.speech-steps{max-width:430px;margin:14px auto 0;display:grid;grid-template-columns:auto 1fr auto 1fr auto;align-items:center;gap:8px;color:#9aa2ae;font-size:11px;font-weight:900}.speech-steps span{padding:5px 8px;border-radius:7px;background:#f2efe8}.speech-steps span.active{background:#e8f2ff;color:#4279bc}.speech-steps i{height:2px;background:#e4e0d8}.speech-steps[data-phase="processing"] i{background:var(--green)}.mic-btn:disabled{opacity:.72}.mic-btn.listening{min-width:172px}.speech-result.processing{background:#eef4fb;border-color:#cbdcf1}.speech-result.processing strong{color:#4279bc}
-.points-btn{display:flex;align-items:center;gap:6px;background:#fff7df;border:1px solid #efd991;color:#8e650f;border-radius:20px;padding:7px 11px;font-size:12px;font-weight:900}.rewards{max-width:980px}.reward-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:24px}.reward-head h1{font-size:28px}.reward-head p{color:var(--muted);font-size:13px;margin-top:5px}.points-total{display:flex;align-items:center;gap:11px;padding:12px 16px;border-left:4px solid var(--yellow);background:#fff8df}.points-total b{font-size:28px;color:#8e650f}.points-total span{font-size:11px;color:var(--muted)}.earn-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}.earn-item{padding:13px 14px;border-top:3px solid var(--green);background:#f4f8f4}.earn-item b{display:block;font-size:13px}.earn-item span{display:block;color:var(--muted);font-size:11px;margin-top:4px}.reward-section{margin-top:25px}.reward-section h2{font-size:18px;margin-bottom:4px}.reward-section>p{font-size:12px;color:var(--muted);margin-bottom:14px}.reward-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.reward-card{border:1px solid var(--line);border-radius:8px;background:#fff;padding:16px;display:flex;flex-direction:column;min-height:150px}.reward-card .reward-icon{font-size:25px}.reward-card h3{font-size:15px;margin:9px 0 5px}.reward-card p{font-size:11px;color:var(--muted);line-height:1.5}.reward-card footer{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:14px}.reward-cost{font-size:12px;font-weight:900;color:#946b14}.reward-card button,.approval-actions button{padding:8px 10px;border-radius:7px;font-size:11px;font-weight:900;background:var(--coral);color:#fff}.reward-card button:disabled{background:#ddd8cf;color:#8f8a81}.reward-notice{margin:0 0 14px;padding:10px 12px;background:#edf7ef;border-left:4px solid var(--green);font-size:12px;color:#39764b}.approval-list{border-top:1px solid var(--line)}.approval{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}.approval strong{font-size:13px}.approval small{display:block;color:var(--muted);margin-top:4px}.approval-actions{display:flex;gap:7px}.approval-actions .deny{background:#ece8df;color:var(--muted)}.approval-status{font-size:11px;font-weight:900;color:var(--green)}
-@media(max-width:700px){.earn-strip{grid-template-columns:repeat(2,1fr)}.reward-grid{grid-template-columns:1fr}.reward-head{align-items:flex-start;flex-direction:column}.points-total{width:100%}.approval{grid-template-columns:1fr}.points-btn span:last-child{display:none}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#23384f">
+  <title>刘劲英语 · 三年级上册</title>
+  <link rel="icon" href="assets/openmoji/1F44B.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="app">
-<div class="shell">
-<aside class="sidebar">
-  <div class="brand"><div class="brand-mark">✦</div><div><strong>English Quest</strong><span>刘劲的英语探险</span></div></div>
-  <div><div class="side-label">学习空间</div><nav class="main-nav">
-    <button v-for="item in nav" :key="item.key" class="nav-item" :class="{active:view===item.key}" @click="view=item.key"><span class="nav-icon">{{item.icon}}</span>{{item.label}}</button>
-  </nav></div>
-  <div v-if="view==='course' || view==='home'"><div class="side-label">教材目录</div><div class="unit-list"><button v-for="(unit,i) in units" :key="unit.id" class="unit-item" :class="{active:selectedUnit===i}" @click="openUnit(i)"><i class="unit-dot"></i><span>{{unit.id}} {{unit.title}}</span></button></div></div>
-  <div class="side-bottom"><strong>本周小目标</strong><p>完成 5 天学习<br>已经完成 {{weekDays}} / 5 天</p><div class="bar" style="margin-top:10px"><i :style="{width:(weekDays/5*100)+'%'}"></i></div></div>
-</aside>
-<main class="content">
-  <div class="topbar"><div style="display:flex;align-items:center;gap:10px"><button class="mobile-menu" @click="view='home'">☰</button><div class="crumb"><b>{{viewTitle}}</b><span v-if="view==='practice'"> · {{currentPractice.label}}</span></div></div><div class="top-actions"><button class="points-btn" @click="view='rewards'"><span>★</span><b>{{points}}</b><span>积分</span></button><div class="streak">🔥 {{streak}} 天连续学习</div><button class="parent-btn" @click="view='report'">家长报告 ↗</button></div></div>
-  <template v-if="view==='home'"><section class="hero"><div class="hero-copy"><div class="eyebrow">✦ 今天也来探险吧</div><h1>把英语，<span>说成自己的话。</span></h1><p>跟着 PEP 三年级上册新教材，从交朋友开始，认识家人、动物和身边的植物，再勇敢开口。</p><button class="hero-cta" @click="startToday">开始今天的学习 <span>→</span></button></div></section>
-  <section><div class="section-head"><div><h2>今天的学习任务</h2><p>建议用时 10 分钟，完成后会自动记录进度</p></div><button class="text-btn" @click="view='course'">查看教材地图 →</button></div><div class="task-grid"><article v-for="task in tasks" :key="task.key" class="task-card"><div><div class="task-top"><span class="task-icon">{{task.icon}}</span><span class="tag" :class="task.tagClass">{{task.tag}}</span></div><h3>{{task.title}}</h3><p>{{task.desc}}</p></div><div class="task-action"><span>{{task.meta}}</span><button class="small-action" @click="startTask(task.key)">{{task.action}}</button></div></article></div></section>
-  <section class="reward-section home-rewards"><div class="section-head"><div><h2>积分奖励站</h2><p>认真学习赚积分，选中奖励后请家长确认</p></div><button class="text-btn" @click="view='rewards'">兑换记录 →</button></div><div v-if="rewardNotice" class="reward-notice">{{rewardNotice}}</div><div class="earn-strip"><div class="earn-item"><b>答对一题 +2</b><span>认真思考有收获</span></div><div class="earn-item"><b>跟读通过 +3</b><span>勇敢开口更重要</span></div><div class="earn-item"><b>完成一组 +5</b><span>坚持完成小目标</span></div><div class="earn-item"><b>花园通关 +15</b><span>知识和策略双挑战</span></div></div><div class="reward-grid"><article v-for="reward in rewardCatalog" :key="reward.id" class="reward-card"><span class="reward-icon">{{reward.icon}}</span><h3>{{reward.title}}</h3><p>{{reward.desc}}</p><footer><span class="reward-cost">★ {{reward.cost}}</span><button :disabled="points < reward.cost || hasPendingReward(reward.id)" @click="requestReward(reward)">{{rewardButtonLabel(reward)}}</button></footer></article></div></section>
-  <div class="lower-grid"><section><div class="section-head"><div><h2>学习进度</h2><p>从 Unit 1 开始，稳稳走完每一步</p></div><button class="text-btn" @click="view='course'">全部单元</button></div><div class="panel progress-list"><div v-for="(unit,i) in units" :key="unit.id" class="progress-row"><div class="unit-number" :class="unit.color">{{i+1}}</div><div><strong>{{unit.id}} {{unit.title}}</strong><small>{{unit.subtitle}}</small><div class="bar"><i :style="{width:unit.progress+'%',background:unit.progress===100?'var(--green)':'var(--blue)'}"></i></div></div><em>{{unit.progress}}%</em></div></div></section><section><div class="section-head"><div><h2>我的小数据</h2><p>坚持比速度更重要</p></div></div><div class="panel"><div class="stats"><div class="stat"><b>{{learned}}</b><span>已学单词</span></div><div class="stat"><b>{{accuracy}}%</b><span>练习正确率</span></div><div class="stat"><b>{{minutes}}</b><span>本周分钟</span></div><div class="stat"><b>{{badges}}</b><span>获得徽章</span></div></div><p class="report-note">{{reportTip}}</p></div></section></div></template>
-  <template v-else-if="view==='course'"><section class="course-view"><div class="course-head"><div><h1>教材地图</h1><p>PEP 三年级上册 · 2024 年 7 月第 1 版</p></div><select class="select-like"><option>三年级上册</option></select></div><div class="unit-tabs"><button v-for="(unit,i) in units" :key="unit.id" class="unit-tab" :class="{active:selectedUnit===i}" @click="selectedUnit=i"><b>{{unit.id}}</b><span>{{unit.title}}</span></button></div><div class="parts"><article v-for="part in activeUnit.parts" :key="part.id" class="part-card"><div><h3>{{part.id}} <span style="color:var(--coral)">·</span> {{part.title}}</h3><p>{{part.desc}}</p></div><div class="lesson-list"><div v-for="lesson in part.lessons" :key="lesson" class="lesson"><span>{{lesson}}</span><button @click="startTask('lesson')">开始 →</button></div></div></article></div><section class="unit-content"><div class="content-heading"><div><h2>本单元全部词汇</h2><p>点击喇叭可听发音，已全部加入听力和小测</p></div><p>{{activeUnit.words.length}} 个词汇</p></div><div class="word-grid"><div v-for="word in activeUnit.words" :key="word[0]" class="word-item"><b>{{word[0]}}</b><span>{{word[1]}}</span><button class="word-sound" @click="speak(word[0])" :aria-label="'播放 '+word[0]">▶</button></div></div></section><section class="unit-content"><div class="content-heading"><div><h2>教材人物与核心句型</h2><p>人物姓名和教材对话均可点击跟读</p></div><p>{{activeUnit.people.length}} 位人物 · {{activeUnit.sentences.length}} 个句型</p></div><div class="people-row"><button v-for="person in activeUnit.people" :key="person[0]" class="person-chip" @click="speak(person[0])"><span>▶</span><div><b>{{person[0]}}</b><span>{{person[1]}}</span></div></button></div><div class="sentence-list"><button v-for="sentence in activeUnit.sentences" :key="sentence[0]" class="sentence-item" @click="speak(sentence[0])"><i>▶</i><span><b>{{sentence[0]}}</b><span>{{sentence[1]}}</span></span></button></div></section></section></template>
-  <template v-else-if="view==='practice'">
-    <section class="practice">
-      <div class="practice-top"><button class="back-btn" @click="leavePractice">← 返回任务</button><h1>{{currentPractice.label}}</h1><span style="font-size:12px;color:var(--muted)">{{quizIndex+1}} / {{quizList.length}}</span></div>
-      <div class="mode-switch">
-        <button v-for="mode in modes" :key="mode.key" class="mode" :class="{active:practiceMode===mode.key}" @click="switchMode(mode.key)">{{mode.icon}} {{mode.label}}</button>
-        <select v-model="selectedVoiceName" class="voice-select" aria-label="英语示范音色"><option v-for="voice in voiceOptions" :key="voice.name" :value="voice.name">{{voice.label}}</option></select>
-      </div>
-      <div class="quiz-card">
-        <div class="quiz-meta"><span>{{currentPractice.unit}}</span><span>得分 {{score}} ⭐</span></div>
-        <div class="coach-stage" :class="coachState"><div class="coach-bubble"><small>TIGER COACH · {{coachLabel}}</small><strong>{{coachLine}}</strong></div></div>
-        <div class="quiz-type">{{currentQuiz.type}}</div><h2>{{currentQuiz.prompt}}</h2>
-        <div v-if="currentQuiz.phonetic" class="phonetic">{{currentQuiz.phonetic}}</div><p class="quiz-hint">{{currentQuiz.hint}}</p>
-        <div class="speak-actions">
-          <button v-if="currentQuiz.audio" class="sound-btn" @click="speak(currentQuiz.audio)" :disabled="speechBusy">🔊 听示范</button>
-          <button v-if="practiceMode==='speak' && speechSupported" class="mic-btn" :class="{listening:isListening}" :disabled="speechPhase==='preparing'||speechPhase==='processing'" @click="toggleListening"><span v-if="isListening" class="wave"><i></i><i></i><i></i></span>{{speechButtonLabel}}</button>
-          <button v-else-if="practiceMode==='speak'" class="mic-btn unsupported" @click="confirmPractice">✓ 我已完成跟读</button>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand" id="home-button" title="回到当前练习">
+        <img src="assets/openmoji/1F44B.svg" alt="">
+        <span>刘劲英语</span>
+      </button>
+      <div class="top-actions">
+        <div class="voice-switch" aria-label="发音角色">
+          <button class="voice-option active" data-voice="sarah">Sarah</button>
+          <button class="voice-option" data-voice="zoom">Zoom</button>
         </div>
-        <div v-if="practiceMode==='speak' && speechBusy" class="speech-steps" :data-phase="speechPhase">
-          <span :class="{active:speechPhase==='preparing'}">准备</span><i></i><span :class="{active:speechPhase==='listening'}">正在听</span><i></i><span :class="{active:speechPhase==='processing'}">判断</span>
-        </div>
-        <template v-if="practiceMode==='speak'">
-          <div v-if="speechMessage" class="speech-result" :class="speechResultClass"><strong>{{speechMessage}}</strong><p>{{speechDetail}}</p><p v-if="recognizedText" class="heard-text">识别到：“{{recognizedText}}”</p></div>
-          <p class="speech-note">不保存录音；浏览器可能调用在线语音识别服务。结果判断的是内容完整度，不是专业音素评分。</p>
-        </template>
-        <template v-else>
-          <div class="options" style="margin-top:18px"><button v-for="(option,i) in currentQuiz.options" :key="option" class="option" :class="{correct:answered && i===currentQuiz.answer,wrong:answered && i===selectedOption && i!==currentQuiz.answer}" @click="answer(i)"><span class="option-letter">{{String.fromCharCode(65+i)}}</span>{{option}}</button></div>
-          <div v-if="answered" class="feedback-box" :class="lastCorrect?'good':'bad'">{{lastCorrect?'太棒了！这个知识点掌握得很稳。':'没关系，我们再听一次，换个方法试试看。'}}</div>
-        </template>
-        <div class="quiz-footer"><span>{{practiceMode==='speak'?(speechPassed?'内容识别通过，可以继续':'先听示范，再大声读出来'):answered?'可以继续下一题啦':'选一个你认为正确的答案'}}</span><button v-if="practiceMode==='speak'?speechPassed:answered" class="next-btn" @click="nextQuiz">{{quizIndex===quizList.length-1?'完成练习':'下一题 →'}}</button></div>
+        <button class="points-button" id="points-button" title="查看积分兑换">
+          <img src="assets/openmoji/2B50.svg" alt="">
+          <strong id="points-total">340</strong><span>积分</span>
+        </button>
       </div>
-    </section>
-  </template>
-  <template v-else-if="view==='rewards'">
-    <section class="rewards">
-      <header class="reward-head"><div><h1>我的奖励站</h1><p>认真学习获得星星积分，兑换后由家长确认。</p></div><div class="points-total"><b>{{points}}</b><div><strong>可用积分</strong><span>每一次进步都会记录</span></div></div></header>
-      <div v-if="rewardNotice" class="reward-notice">{{rewardNotice}}</div>
-      <div class="earn-strip"><div class="earn-item"><b>答对一题 +2</b><span>认真思考有收获</span></div><div class="earn-item"><b>跟读通过 +3</b><span>勇敢开口更重要</span></div><div class="earn-item"><b>完成一组 +5</b><span>坚持完成小目标</span></div><div class="earn-item"><b>花园通关 +15</b><span>知识和策略双挑战</span></div></div>
-      <section class="reward-section"><h2>可以兑换</h2><p>孩子先申请，家长确认时才扣除积分。</p><div class="reward-grid"><article v-for="reward in rewardCatalog" :key="reward.id" class="reward-card"><span class="reward-icon">{{reward.icon}}</span><h3>{{reward.title}}</h3><p>{{reward.desc}}</p><footer><span class="reward-cost">★ {{reward.cost}}</span><button :disabled="points < reward.cost || hasPendingReward(reward.id)" @click="requestReward(reward)">{{rewardButtonLabel(reward)}}</button></footer></article></div></section>
-      <section class="reward-section"><h2>家长确认</h2><p>确认后扣分并兑现约定；拒绝不会扣分。</p><div v-if="!redemptions.length" class="empty">还没有兑换申请</div><div v-else class="approval-list"><div v-for="item in redemptions" :key="item.id" class="approval"><div><strong>{{item.title}} · ★ {{item.cost}}</strong><small>{{item.createdAt}}</small></div><div v-if="item.status==='pending'" class="approval-actions"><button class="deny" @click="rejectReward(item)">暂不兑换</button><button @click="approveReward(item)">家长确认</button></div><span v-else class="approval-status">{{item.status==='approved'?'已确认':'已取消'}}</span></div></div></section>
-    </section>
-  </template>
-  <template v-else-if="view==='report'"><section class="report"><h1>学习报告</h1><p>这是刘劲最近 7 天的学习小结，继续保持这个节奏。</p><div class="report-grid"><div class="report-stat"><b>{{minutes}}</b><span>学习分钟</span></div><div class="report-stat"><b>{{learned}}</b><span>学会单词</span></div><div class="report-stat"><b>{{accuracy}}%</b><span>练习正确率</span></div><div class="report-stat"><b>{{streak}} 天</b><span>连续学习</span></div></div><div class="report-panel"><h2>能力小雷达</h2><div v-for="skill in skills" :key="skill.label" class="skill-row"><span>{{skill.label}}</span><div class="bar"><i :style="{width:skill.value+'%',background:skill.color}"></i></div><b>{{skill.value}}%</b></div></div><div class="report-panel"><h2>待复习内容</h2><div v-if="mistakes.length===0" class="empty">暂时没有错题，太厉害了！</div><div v-for="mistake in mistakes" :key="mistake.word" class="mistake"><div><strong>{{mistake.word}}</strong><span>{{mistake.reason}}</span></div><button class="review-btn" @click="startTask('review')">现在复习</button></div></div></section></template>
-</main></div></div>
-<script src="textbook-data.js"></script>
-<script src="audio-data.js"></script>
-<script>
-const {createApp,ref,computed,watch}=Vue;
-const units=[
- {id:'Unit 1',title:'Making friends',subtitle:'问候、介绍与友谊',color:'coral',progress:36,parts:[{id:'Part A',title:'Hello!',desc:'问候新朋友，介绍自己的名字',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'How can we be a good friend?',desc:'用 listen、help、share 交朋友',lessons:['Let\'s talk','Let\'s chant','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作交友思维导图，读 Zoom 和 Zip 的故事',lessons:['Project','角色跟读','Self-check']}]},
- {id:'Unit 2',title:'Different families',subtitle:'家庭成员与不同的家庭',color:'blue',progress:18,parts:[{id:'Part A',title:'Who lives with you?',desc:'认识家庭成员并介绍家人',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'Different families',desc:'用 This is my... 介绍大小不同的家庭',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作 family tree，读小家庭和大家庭',lessons:['Make a family tree','角色跟读','Self-check']}]},
- {id:'Unit 3',title:'Our animal friends',subtitle:'宠物、野生动物与特征',color:'green',progress:8,parts:[{id:'Part A',title:'What pets do you know?',desc:'询问宠物并表达 I like...',lessons:['Let\'s talk','Let\'s learn','Listen and do']},{id:'Part B',title:'What wild animals do you know?',desc:'认识 fox、panda、lion 等野生动物',lessons:['Let\'s talk','Let\'s learn','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作动物图画书，读鲸鱼的故事',lessons:['Make an animal picture book','角色跟读','Self-check']}]},
- {id:'Unit 4',title:'Plants around us',subtitle:'水果、植物与爱护花园',color:'coral',progress:28,parts:[{id:'Part A',title:'What do we get from plants?',desc:'认识 apples、bananas、grapes 和 oranges',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'How can we help plants?',desc:'用 water、plant、grow 谈论照顾花园',lessons:['Let\'s talk','Let\'s learn','Letters and sounds']},{id:'Part C',title:'Project & Reading time',desc:'制作纸花园，读苹果树从种子到结果的故事',lessons:['Make a paper garden','角色跟读','Self-check']}]},
- {id:'Unit 5',title:'The colourful world',subtitle:'颜色、标识与多彩自然',color:'blue',progress:12,parts:[{id:'Part A',title:'What colours do you see?',desc:'认识 red、pink、green、orange 等颜色',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'How do colours help us?',desc:'用颜色表达喜好，读懂颜色标识',lessons:['Let\'s talk','Colour and say','Listen and do']},{id:'Part C',title:'Project & Reading time',desc:'制作 colour flip book，阅读向日葵的成长故事',lessons:['Make a colour flip book','角色跟读','Self-check']}]},
- {id:'Unit 6',title:'Useful numbers',subtitle:'数字、年龄与生日',color:'green',progress:16,parts:[{id:'Part A',title:'When do we use numbers?',desc:'会问年龄，会说 one 到 ten',lessons:['Let\'s talk','Let\'s learn','Listen and chant']},{id:'Part B',title:'How useful are numbers?',desc:'用 How many...? 数一数、说一说',lessons:['Let\'s talk','Count and say','Start to read']},{id:'Part C',title:'Project & Reading time',desc:'制作生日卡片，读数字小故事',lessons:['Make a birthday card','角色跟读','Self-check']}]},
- {id:'Revision',title:'Being a good guest',subtitle:'全册综合复习与礼貌做客',color:'yellow',progress:0,parts:[{id:'Task 1',title:'Say hello',desc:'综合问候、介绍和身体部位',lessons:['Listen and tick','Read aloud','词汇闯关']},{id:'Task 2',title:'Be helpful',desc:'综合动物、颜色和植物表达',lessons:['Look and circle','情景选择','综合小测']},{id:'Task 3',title:'Be a good guest',desc:'练习礼貌、分享和倾听',lessons:['角色扮演','口语任务','Self-check']}]}
-];
-units.forEach((unit, index) => Object.assign(unit, window.TEXTBOOK_CONTENT[index]));
-const listenQuizzes=[
- {type:'听音选一选',prompt:'What\'s your name?',phonetic:'/wɒts jɔː neɪm/',hint:'选择这句话的中文意思。',audio:'What is your name?',options:['你叫什么名字？','你好吗？','这是我的家人。','我喜欢狗。'],answer:0},
- {type:'家庭词汇',prompt:'This is my ___ .',hint:'图片里是一位妈妈，选择正确的单词。',audio:'This is my mum.',options:['dad','mum','sister','cousin'],answer:1},
- {type:'动物特征',prompt:'The giraffe is ___ .',hint:'长颈鹿很高，选出正确的词。',audio:'The giraffe is tall.',options:['small','fast','tall','big'],answer:2},
-];
-const speakQuizzes=[
- {type:'跟读热身',prompt:'Hello! My name is Mike Black.',phonetic:'/həˈləʊ maɪ neɪm ɪz maɪk blæk/',hint:'像在班里认识新朋友一样，自然地介绍自己。',audio:'Hello! My name is Mike Black.',options:['你好，我叫迈克·布莱克。','这是我的家人。','我喜欢狗。','我们可以分享。'],answer:0},
- {type:'家庭小剧场',prompt:'This is my family.',phonetic:'/ðɪs ɪz maɪ ˈfæməli/',hint:'介绍全家人时，跟着示范说一遍。',audio:'This is my family.',options:['这是我的家人。','这是我的动物。','我有一个花园。','我们很快。'],answer:0},
- {type:'动物小剧场',prompt:'I like my dog.',phonetic:'/aɪ laɪk maɪ dɒɡ/',hint:'说出你喜欢的宠物，注意 like 的长音。',audio:'I like my dog.',options:['我喜欢我的狗。','我有一只猫。','这是一只狮子。','我们可以浇水。'],answer:0},
-];
-const quizQuizzes=[
- {type:'单元小测',prompt:'Is this your brother?',hint:'选择合适的回答。',audio:'Is this your brother?',options:['Yes, it is.','Nice to meet you.','I like fish.','We can plant trees.'],answer:0},
- {type:'单元小测',prompt:'What animals do you know?',hint:'选择一个野生动物。',audio:'What animals do you know?',options:['panda','cousin','grapes','garden'],answer:0},
- {type:'单元小测',prompt:'We can ___ the flowers.',hint:'我们可以给花浇水。',audio:'We can water the flowers.',options:['water','share','listen','play'],answer:0},
-];
-const unitQuizSets={
-  0:{listen:[
-    {type:'听音选一选',prompt:'What\'s your name?',phonetic:'/wɒts jɔː neɪm/',hint:'选择这句话的中文意思。',audio:'What is your name?',options:['你叫什么名字？','你好吗？','这是我的家人。','我喜欢狗。'],answer:0},
-    {type:'交友行动',prompt:'We can ___ .',hint:'好朋友之间要学会分享。',audio:'We can share.',options:['share','sleep','run','eat'],answer:0},
-    {type:'听音辨动作',prompt:'Point to your ear.',hint:'选择这句话中身体部位的中文。',audio:'Point to your ear.',options:['耳朵','手','眼睛','嘴巴'],answer:0}
-  ],speak:[
-    {type:'跟读热身',prompt:'Hello! My name is Mike Black.',phonetic:'/həˈləʊ maɪ neɪm ɪz maɪk blæk/',hint:'像在班里认识新朋友一样，自然地介绍自己。',audio:'Hello! My name is Mike Black.',options:['你好，我叫迈克·布莱克。','这是我的家人。','我喜欢狗。','我们可以分享。'],answer:0},
-    {type:'角色对话',prompt:'Nice to meet you.',phonetic:'/naɪs tə miːt juː/',hint:'和新朋友见面时，跟着示范说一遍。',audio:'Nice to meet you.',options:['Nice to meet you, too!','Good night!','I\'m eight.','Here you are.'],answer:0},
-    {type:'友谊宣言',prompt:'I am a good friend.',phonetic:'/aɪ æm ə ɡʊd frend/',hint:'大声说出你的友谊宣言。',audio:'I am a good friend.',options:['我是一个好朋友。','我有一个大家庭。','这是一只熊猫。','我们可以浇水。'],answer:0}
-  ],quiz:[
-    {type:'单元小测',prompt:'朋友说：Nice to meet you!',hint:'你可以怎样回应？',audio:'Nice to meet you, too!',options:['Nice to meet you, too!','Good night!','I\'m eight.','Here you are.'],answer:0},
-    {type:'单元小测',prompt:'I ___ and share.',hint:'好朋友会倾听，也会分享。',audio:'I listen and share.',options:['listen','sleep','jump','draw'],answer:0},
-    {type:'单元小测',prompt:'Wave your ___ .',hint:'挥一挥你的手。',audio:'Wave your hand.',options:['hand','ear','eye','mouth'],answer:0}
-  ]},
-  1:{listen:listenQuizzes,speak:[speakQuizzes[1],{type:'家庭小剧场',prompt:'This is my mum.',phonetic:'/ðɪs ɪz maɪ mʌm/',hint:'介绍你的妈妈。',audio:'This is my mum.',options:['这是我的妈妈。','这是我的姐姐。','我喜欢鱼。','我们很快。'],answer:0},{type:'家庭小剧场',prompt:'I have two cousins too.',hint:'说出你有两个表兄弟姐妹。',audio:'I have two cousins too.',options:['我也有两个表兄弟姐妹。','我有一个花园。','这是一只狮子。','我们可以分享。'],answer:0}],quiz:[
-    {type:'单元小测',prompt:'Is this your brother?',hint:'选择合适的回答。',audio:'Is this your brother?',options:['Yes, it is.','Nice to meet you.','I like fish.','We can plant trees.'],answer:0},
-    {type:'单元小测',prompt:'No, it\'s my ___ .',hint:'不是哥哥，是 cousin（表兄弟姐妹）。',audio:"No, it's my cousin.",options:['cousin','mum','grandpa','baby sister'],answer:0},
-    {type:'单元小测',prompt:'This family is ___ .',hint:'图片中家庭成员很多，选择 big。',audio:'This family is big.',options:['big','small','fast','tall'],answer:0}
-  ]},
-  2:{listen:[
-    {type:'听音选动物',prompt:'I like ___ .',hint:'选择你喜欢的宠物。',audio:'I like dogs.',options:['dogs','cousins','grapes','gardens'],answer:0},
-    {type:'动物词汇',prompt:'It\'s a ___ .',hint:'图片中是熊猫。',audio:"It's a panda.",options:['panda','fox','lion','giraffe'],answer:0},
-    {type:'动物特征',prompt:'The giraffe is ___ .',hint:'长颈鹿很高。',audio:'The giraffe is tall.',options:['small','fast','tall','big'],answer:2}
-  ],speak:[speakQuizzes[2],{type:'动物小剧场',prompt:"It's a red panda.",phonetic:'/ɪts ə red ˈpændə/',hint:'在动物园认出小熊猫。',audio:"It's a red panda.",options:['它是一只小熊猫。','它是一只狮子。','我喜欢鱼。','我们很大。'],answer:0},{type:'动物小剧场',prompt:'The fish is small.',phonetic:'/ðə fɪʃ ɪz smɔːl/',hint:'跟着鲸鱼故事说一说。',audio:'The fish is small.',options:['鱼很小。','鱼很快。','大象很大。','熊猫吃很多。'],answer:0}],quiz:[
-    {type:'单元小测',prompt:'What animals do you know?',hint:'选择一个野生动物。',audio:'What animals do you know?',options:['panda','cousin','grapes','garden'],answer:0},
-    {type:'单元小测',prompt:'The lion is ___ .',hint:'狮子跑得很快。',audio:'The lion is fast.',options:['fast','small','tall','big'],answer:0},
-    {type:'单元小测',prompt:'I like my ___ .',hint:'选择宠物 dog。',audio:'I like my dog.',options:['dog','tree','cousin','apple'],answer:0}
-  ]},
-  3:{listen:[
-    {type:'植物词汇',prompt:'I like ___ .',hint:'选择一种水果。',audio:'I like apples.',options:['apples','water','trees','flowers'],answer:0},
-    {type:'植物词汇',prompt:'Grapes are ___ .',hint:'葡萄很小。',audio:'Grapes are small.',options:['small','big','fast','tall'],answer:0},
-    {type:'听音选动作',prompt:'Let\'s grow a tree!',hint:'选择正确的中文意思。',audio:'Let us grow a tree.',options:['让我们种一棵树！','让我们分享！','这是一只熊猫。','我喜欢香蕉。'],answer:0}
-  ],speak:[
-    {type:'植物小剧场',prompt:'Do you like apples?',phonetic:'/duː juː laɪk ˈæpəlz/',hint:'问问朋友喜欢不喜欢苹果。',audio:'Do you like apples?',options:['你喜欢苹果吗？','你有兄弟吗？','这是什么动物？','我们很快。'],answer:0},
-    {type:'植物小剧场',prompt:'We can water the flowers.',phonetic:'/wiː kən ˈwɔːtə ðə ˈflaʊəz/',hint:'说出我们能为花园做的事。',audio:'We can water the flowers.',options:['我们可以给花浇水。','我们可以吃鱼。','我们喜欢狮子。','这是我的表兄弟。'],answer:0},
-    {type:'植物小剧场',prompt:'I like the fresh air.',phonetic:'/aɪ laɪk ðə freʃ eə/',hint:'在花园里说出你的感受。',audio:'I like the fresh air.',options:['我喜欢新鲜空气。','我喜欢大象。','我有一个大家庭。','苹果很长。'],answer:0}
-  ],quiz:[
-    {type:'单元小测',prompt:'We can ___ the flowers.',hint:'我们可以给花浇水。',audio:'We can water the flowers.',options:['water','share','listen','play'],answer:0},
-    {type:'单元小测',prompt:'Bananas are ___ .',hint:'香蕉是长的。',audio:'Bananas are long.',options:['long','small','fast','big'],answer:0},
-    {type:'单元小测',prompt:'Trees grow and give us ___ .',hint:'树木给我们新鲜空气。',audio:'Trees grow and give us fresh air.',options:['fresh air','cousins','pets','numbers'],answer:0}
-  ]},
-  4:{listen:[
-    {type:'颜色词汇',prompt:'The sun is ___ .',hint:'太阳是橙色的。',audio:'The sun is orange.',options:['orange','green','red','white'],answer:0},
-    {type:'颜色词汇',prompt:'Snow is ___ .',hint:'雪是白色的。',audio:'Snow is white.',options:['white','black','pink','brown'],answer:0},
-    {type:'颜色混合',prompt:'Blue + red = ___ .',hint:'蓝色和红色混合会变成紫色。',audio:'Blue and red make purple.',options:['purple','green','orange','yellow'],answer:0}
-  ],speak:[
-    {type:'颜色小剧场',prompt:'What colour is it?',phonetic:'/wɒt ˈkʌlə ɪz ɪt/',hint:'指着身边的物品问问颜色。',audio:'What colour is it?',options:['它是什么颜色？','你喜欢苹果吗？','这是谁的家人？','我们可以浇水。'],answer:0},
-    {type:'颜色小剧场',prompt:'I like red and pink.',phonetic:'/aɪ laɪk red ænd pɪŋk/',hint:'说出你喜欢的颜色。',audio:'I like red and pink.',options:['我喜欢红色和粉色。','我喜欢大象和狮子。','我有红色的花。','天空是蓝色的。'],answer:0},
-    {type:'自然阅读',prompt:'I am a sunflower.',phonetic:'/aɪ æm ə ˈsʌnˌflaʊə/',hint:'跟着向日葵故事读一读。',audio:'I am a sunflower.',options:['我是一朵向日葵。','我是一棵苹果树。','我是一只蜜蜂。','我是一片蓝色的大海。'],answer:0}
-  ],quiz:[
-    {type:'单元小测',prompt:'It\'s green. Green can say “___”.',hint:'绿色标识表示可以通行。',audio:'It is green. Green can say Go.',options:['Go','No','Be careful','Use again'],answer:0},
-    {type:'单元小测',prompt:'It\'s blue. Blue can say “___”.',hint:'蓝色标识表示可以再次使用。',audio:'It is blue. Blue can say Use again.',options:['Use again','Go','No','Be careful'],answer:0},
-    {type:'单元小测',prompt:'Yellow + red = ___ .',hint:'黄色和红色混合会变成橙色。',audio:'Yellow and red make orange.',options:['orange','purple','green','brown'],answer:0}
-  ]},
-  5:{listen:[
-    {type:'数字词汇',prompt:'How old are you?',hint:'选择合适的回答。',audio:'How old are you?',options:["I'm five years old.",'I like five.','This is five.','Five is red.'],answer:0},
-    {type:'数字词汇',prompt:'How many apples?',hint:'图中有两个苹果。',audio:'How many apples? Two.',options:['Two.','Five.','Seven.','Ten.'],answer:0},
-    {type:'数字规律',prompt:'1, 3, 5, 7, ___',hint:'这些是奇数，接下来是 nine。',audio:'One, three, five, seven, nine.',options:['nine','eight','ten','four'],answer:0}
-  ],speak:[
-    {type:'数字小剧场',prompt:'I\'m five years old.',phonetic:'/aɪm faɪv jɪəz əʊld/',hint:'说出自己的年龄。',audio:"I'm five years old.",options:['我五岁。','我有五个苹果。','现在五点。','这是第五张卡片。'],answer:0},
-    {type:'数字小剧场',prompt:'Three. And one orange.',phonetic:'/θriː ænd wʌn ˈɒrɪndʒ/',hint:'数一数水果，再说出橙子的数量。',audio:'Three. And one orange.',options:['三个，还有一个橙子。','三个苹果。','一个橙色。','我十岁。'],answer:0},
-    {type:'数字小剧场',prompt:'Happy birthday!',phonetic:'/ˈhæpi ˈbɜːθdeɪ/',hint:'在生日派对上送上祝福。',audio:'Happy birthday!',options:['生日快乐！','谢谢。','请给我水。','再见。'],answer:0}
-  ],quiz:[
-    {type:'单元小测',prompt:'How old are you?',hint:'选择正确回答。',audio:'How old are you?',options:["I'm five years old.",'I like apples.','It is green.','This is my mum.'],answer:0},
-    {type:'单元小测',prompt:'How many bananas?',hint:'图片中有三根香蕉。',audio:'How many bananas? Three.',options:['Three.','One.','Six.','Ten.'],answer:0},
-    {type:'单元小测',prompt:'Ten is an ___ number.',hint:'10 可以被 2 整除，是 even（偶数）。',audio:'Ten is an even number.',options:['even','odd','old','small'],answer:0}
-  ]},
-  6:{listen:[
-    {type:'综合听力',prompt:'What colours are the baby cats?',hint:'选择图片中的颜色组合。',audio:'Black, orange and white.',options:['Black, orange and white.','Red, pink and blue.','Green and yellow.','Purple and brown.'],answer:0},
-    {type:'综合听力',prompt:'How can the children help?',hint:'在花园里，他们可以给花浇水。',audio:'Water the flowers.',options:['Water the flowers.','Plant the trees.','Feed the dog.','Draw a rainbow.'],answer:0},
-    {type:'综合听力',prompt:'How many fruits?',hint:'选择正确数量表达。',audio:'Three oranges.',options:['Three oranges.','Two apples.','Five bananas.','Nine grapes.'],answer:0}
-  ],speak:[
-    {type:'礼貌小剧场',prompt:'Nice to meet you too.',phonetic:'/naɪs tə miːt juː tuː/',hint:'回应朋友的问候。',audio:'Nice to meet you too.',options:['很高兴也认识你。','请小心。','我五岁。','这是我的花园。'],answer:0},
-    {type:'礼貌小剧场',prompt:'This is for you.',phonetic:'/ðɪs ɪz fə juː/',hint:'送礼物给朋友时这样说。',audio:'This is for you.',options:['这是给你的。','这是我的狗。','你喜欢香蕉吗？','我们可以帮忙。'],answer:0},
-    {type:'礼貌小剧场',prompt:'Be nice, please.',phonetic:'/biː naɪs pliːz/',hint:'做客时要友善、有礼貌。',audio:'Be nice, please.',options:['请友善一点。','请给我十个。','请浇水。','请说颜色。'],answer:0}
-  ],quiz:[
-    {type:'综合小测',prompt:'朋友送你礼物，你说：___',hint:'选择礼貌的回应。',audio:'Thank you.',options:['Thank you.','Good morning.','I am a dog.','It is blue.'],answer:0},
-    {type:'综合小测',prompt:'在动物园想让大家安静，可以说：___',hint:'阅读复习故事中的礼貌表达。',audio:'Shh.',options:['Shh.','Go!','Run!','Jump!'],answer:0},
-    {type:'综合小测',prompt:'Do you like bananas?',hint:'选择肯定回答。',audio:'Yes, I do. Thanks.',options:['Yes, I do. Thanks.','No, it\'s a lion.','I\'m ten.','This is my family.'],answer:0}
-  ]}
-};
-function placeAnswer(correct, distractors, position) {
-  const options = distractors.slice(0, 3);
-  options.splice(position, 0, correct);
-  return options;
-}
-function buildVocabularyExercises(unit, unitIndex) {
-  const words = unit.words;
-  const people = unit.people;
-  const listen = words.map((word, index) => {
-    const position = index % 4;
-    const distractors = words.filter((_, otherIndex) => otherIndex !== index).slice(index + 1).concat(words.slice(0, index)).map(item => item[1]);
-    return {
-      type:'词汇听力 · ' + (index + 1) + '/' + words.length,
-      prompt:'听发音，选出正确的中文意思',
-      hint:'本题来自 ' + unit.id + ' 全部词汇。',
-      audio:word[0],
-      options:placeAnswer(word[1], distractors, position),
-      answer:position
-    };
-  });
-  const names = people.map((person, index) => {
-    const position = (index + unitIndex) % 4;
-    const pool = people.filter((_, otherIndex) => otherIndex !== index).map(item => item[1]);
-    const fallback = ['迈克·布莱克', '萨拉·米勒', '陈杰', '吴彬彬', '约翰·贝克', '怀特老师'].filter(item => item !== person[1]);
-    return {
-      type:'人物姓名',
-      prompt:'听一听，这位教材人物是谁？',
-      hint:'注意英文姓名的自然连读。',
-      audio:person[0],
-      options:placeAnswer(person[1], pool.concat(fallback), position),
-      answer:position
-    };
-  });
-  const quiz = words.map((word, index) => {
-    const position = (index + 2) % 4;
-    const distractors = words.filter((_, otherIndex) => otherIndex !== index).slice(index + 1).concat(words.slice(0, index)).map(item => item[0]);
-    return {
-      type:'词汇认读 · ' + (index + 1) + '/' + words.length,
-      prompt:word[1],
-      hint:'选出对应的英文词汇。',
-      audio:word[0],
-      options:placeAnswer(word[0], distractors, position),
-      answer:position
-    };
-  });
-  const speak = unit.sentences.map((sentence, index) => ({
-    type:'教材跟读 · ' + (index + 1) + '/' + unit.sentences.length,
-    prompt:sentence[0],
-    hint:sentence[1] + '，先听示范，再自然地说出来。',
-    audio:sentence[0],
-    options:[sentence[1]],
-    answer:0
-  }));
-  return {listen:listen.concat(names), quiz, speak};
-}
-units.forEach((unit, index) => {
-  const completeSet = buildVocabularyExercises(unit, index);
-  unitQuizSets[index] = completeSet;
-});
-createApp({
-  setup() {
-    let savedState = {};
-    try { savedState = JSON.parse(localStorage.getItem('english-quest-progress') || '{}'); } catch (_) {}
-    if (Array.isArray(savedState.unitProgress)) {
-      savedState.unitProgress.forEach((progress, index) => {
-        if (units[index] && Number.isFinite(progress)) units[index].progress = Math.max(0, Math.min(100, progress));
-      });
-    }
-    const view = ref('home');
-    const selectedUnit = ref(Number.isInteger(savedState.selectedUnit) ? Math.max(0, Math.min(units.length - 1, savedState.selectedUnit)) : 0);
-    const practiceMode = ref('listen');
-    const quizIndex = ref(0);
-    const score = ref(0);
-    const answered = ref(false);
-    const selectedOption = ref(-1);
-    const lastCorrect = ref(false);
-    const streak = ref(Number.isFinite(savedState.streak) ? savedState.streak : 3);
-    const weekDays = ref(Number.isFinite(savedState.weekDays) ? savedState.weekDays : 3);
-    const learned = ref(Number.isFinite(savedState.learned) ? savedState.learned : 18);
-    const minutes = ref(Number.isFinite(savedState.minutes) ? savedState.minutes : 42);
-    const badges = ref(Number.isFinite(savedState.badges) ? savedState.badges : 2);
-    const accuracy = ref(Number.isFinite(savedState.accuracy) ? savedState.accuracy : 86);
-    const points = ref(Number.isFinite(savedState.points) ? savedState.points : 60);
-    const rewardNotice = ref('');
-    const rewardCatalog = [
-      {id:'tv',icon:'📺',title:'看电视 30 分钟',desc:'完成当天任务后，观看一次家长同意的节目。',cost:120},
-      {id:'phone',icon:'📱',title:'玩手机 20 分钟',desc:'在约定时间内玩一次家长同意的游戏。',cost:280},
-      {id:'outing',icon:'🎡',title:'出去玩一次',desc:'由孩子提出地点，和家长约定周末出行。',cost:180},
-      {id:'request',icon:'💬',title:'提一个小要求',desc:'可以提出一个合理愿望，具体内容由家长确认。',cost:600},
-      {id:'cash',icon:'💵',title:'兑换 10 元零花钱',desc:'家长确认后兑现，可存入孩子的零花钱账户。',cost:1200}
-    ];
-    const redemptions = ref(Array.isArray(savedState.redemptions) ? savedState.redemptions : []);
-    const speechRate = ref(.8);
-    const voiceOptions = ref([
-      {name:'zoom',label:'Zoom · 活力男声'},
-      {name:'sarah',label:'Sarah · 自然女声'}
-    ]);
-    let savedVoicePack = 'zoom';
-    try { savedVoicePack = localStorage.getItem('english-quest-voice-pack') || 'zoom'; } catch (_) {}
-    const selectedVoiceName = ref(['zoom','sarah'].includes(savedVoicePack) ? savedVoicePack : 'zoom');
-    watch(selectedVoiceName, pack => {
-      if (!['zoom','sarah'].includes(pack)) {
-        selectedVoiceName.value = 'zoom';
-        return;
-      }
-      try { localStorage.setItem('english-quest-voice-pack', pack); } catch (_) {}
-    });
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const speechSupported = ref(Boolean(SpeechRecognition));
-    const speechPhase = ref('idle');
-    const countdown = ref(0);
-    const listeningSeconds = ref(0);
-    const isListening = computed(() => speechPhase.value === 'listening');
-    const recognizedText = ref('');
-    const speechMessage = ref(SpeechRecognition ? '准备好后，点击“开始跟读”' : '当前浏览器不支持语音识别');
-    const speechDetail = ref(SpeechRecognition ? '第一次使用时，请允许浏览器访问麦克风。' : '请使用最新版 Chrome 或 Edge 打开。');
-    const speechPassed = ref(false);
-    const speechAwarded = ref(false);
-    const isSpeaking = ref(false);
-    let recognizer = null;
-    let activeAudio = null;
-    let recognitionHadResult = false;
-    let recognitionFinalized = false;
-    let recognitionAlternatives = [];
-    let speechSession = 0;
-    let countdownTimer = null;
-    let listeningTimer = null;
-    let stopTimer = null;
-    let startGuardTimer = null;
-    let processingTimer = null;
+    </header>
 
-    const nav = [
-      {key:'home',label:'今日学习',icon:'⌂'},
-      {key:'course',label:'教材地图',icon:'▦'},
-      {key:'practice',label:'练习中心',icon:'✎'},
-      {key:'rewards',label:'奖励站',icon:'★'},
-      {key:'report',label:'学习报告',icon:'◒'}
-    ];
-    const modes = [
-      {key:'listen',label:'听力',icon:'◉'},
-      {key:'speak',label:'跟读',icon:'◌'},
-      {key:'quiz',label:'小测',icon:'✓'}
-    ];
-    const tasks = [
-      {key:'words',icon:'🧩',tag:'今日推荐',tagClass:'',title:'单词探险',desc:'按当前单元完整词汇表逐个练习',meta:'全单元词汇 · 每词可听',action:'开始'},
-      {key:'speak',icon:'🎙',tag:'开口说',tagClass:'blue',title:'跟读小剧场',desc:'跟读本单元全部核心句型和人物对话',meta:'教材句型 · 逐句跟读',action:'开口'},
-      {key:'game',icon:'🌱',tag:'Unit 4',tagClass:'warm',title:'英语花园保卫战',desc:'答题收集阳光，种下能力植物守住花园',meta:'三波挑战 · 通关 +15',action:'挑战'}
-    ];
-    const skills = [
-      {label:'认读',value:90,color:'var(--coral)'},
-      {label:'听力',value:82,color:'var(--blue)'},
-      {label:'跟读',value:78,color:'var(--green)'},
-      {label:'句型',value:85,color:'var(--yellow)'}
-    ];
-    const mistakes = ref(Array.isArray(savedState.mistakes) ? savedState.mistakes : [
-      {word:"What's your name?",reason:'句型 · 昨天答错 1 次'},
-      {word:'blue',reason:'听音 · 还需要再听一遍'}
-    ]);
+    <main class="page">
+      <section class="welcome">
+        <div>
+          <small id="unit-eyebrow">TODAY · UNIT 1</small>
+          <h1>Good afternoon, 刘劲!</h1>
+        </div>
+        <div class="today-progress">
+          <b id="today-label">今天完成 0 题</b>
+          <div class="track"><i id="today-track"></i></div>
+        </div>
+      </section>
 
-    const activeUnit = computed(() => units[selectedUnit.value]);
-    const quizList = computed(() => {
-      const set = unitQuizSets[selectedUnit.value] || unitQuizSets[0];
-      return set[practiceMode.value] || set.listen;
-    });
-    const currentQuiz = computed(() => quizList.value[quizIndex.value] || quizList.value[0]);
-    const currentPractice = computed(() => ({
-      label: practiceMode.value === 'speak' ? '跟读小剧场' : practiceMode.value === 'quiz' ? '单元小测' : '听力探险',
-      unit: units[selectedUnit.value].id + ' · ' + units[selectedUnit.value].title
-    }));
-    const viewTitle = computed(() => ({home:'今日学习',course:'教材地图',practice:'练习中心',rewards:'奖励站',report:'学习报告'}[view.value]));
-    const reportTip = computed(() => accuracy.value >= 90 ? '这周的听力进步很明显，继续保持！' : '每天完成一个小任务，你会发现自己越来越敢开口。');
-    const speechBusy = computed(() => ['preparing','listening','processing'].includes(speechPhase.value));
-    const speechButtonLabel = computed(() => {
-      if (speechPhase.value === 'preparing') return `准备中 ${countdown.value || ''}`.trim();
-      if (speechPhase.value === 'listening') return `■ 我读完了 ${listeningSeconds.value}秒`;
-      if (speechPhase.value === 'processing') return '正在判断…';
-      return '🎤 开始跟读';
-    });
-    const speechResultClass = computed(() => speechPhase.value === 'processing' ? 'processing' : speechPassed.value ? 'good' : recognizedText.value ? 'bad' : '');
-    const coachState = computed(() => isSpeaking.value ? 'talking' : isListening.value ? 'listening' : speechPassed.value || (answered.value && lastCorrect.value) ? 'correct' : recognizedText.value || (answered.value && !lastCorrect.value) ? 'retry' : 'idle');
-    const coachLabel = computed(() => ({talking:'跟我读',listening:'我在听',correct:'太棒了',retry:'再试一次',idle:'准备好了吗'}[coachState.value]));
-    const coachLine = computed(() => coachState.value === 'talking' ? currentQuiz.value.audio : coachState.value === 'listening' ? 'Your turn! 大声读出来。' : coachState.value === 'correct' ? 'Great job! 读得真棒！' : coachState.value === 'retry' ? 'Almost! 慢一点，再来一次。' : currentQuiz.value.prompt);
+      <nav class="mode-grid" aria-label="练习方式">
+        <button class="mode spell active" data-mode="spell">
+          <span><strong>拼单词</strong><small>Spell</small></span>
+          <img src="assets/openmoji/1F9E9.svg" alt="">
+        </button>
+        <button class="mode sentence" data-mode="sentence">
+          <span><strong>组句子</strong><small>Sentence</small></span>
+          <img src="assets/openmoji/1F442.svg" alt="">
+        </button>
+        <button class="mode speak" data-mode="speak">
+          <span><strong>跟读检查</strong><small>Speak</small></span>
+          <img src="assets/openmoji/1F4AC.svg" alt="">
+        </button>
+      </nav>
 
-    function persistProgress() {
-      try {
-        localStorage.setItem('english-quest-progress', JSON.stringify({
-          selectedUnit:selectedUnit.value,
-          unitProgress:units.map(unit => unit.progress),
-          streak:streak.value,weekDays:weekDays.value,learned:learned.value,minutes:minutes.value,
-          badges:badges.value,accuracy:accuracy.value,points:points.value,mistakes:mistakes.value,
-          redemptions:redemptions.value
-        }));
-      } catch (_) {}
-    }
-    watch([selectedUnit,streak,weekDays,learned,minutes,badges,accuracy,points,mistakes,redemptions], persistProgress, {deep:true});
-    function awardPoints(amount) {
-      points.value += amount;
-    }
-    function hasPendingReward(rewardId) {
-      return redemptions.value.some(item => item.rewardId === rewardId && item.status === 'pending');
-    }
-    function rewardButtonLabel(reward) {
-      if (hasPendingReward(reward.id)) return '等待确认';
-      return points.value < reward.cost ? '积分不足' : '申请兑换';
-    }
-    function requestReward(reward) {
-      if (points.value < reward.cost || hasPendingReward(reward.id)) return;
-      redemptions.value.unshift({id:Date.now(),rewardId:reward.id,title:reward.title,cost:reward.cost,status:'pending',createdAt:new Date().toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})});
-      rewardNotice.value = `已申请“${reward.title}”，请家长确认。`;
-    }
-    function approveReward(item) {
-      if (item.status !== 'pending') return;
-      if (points.value < item.cost) {
-        rewardNotice.value = '当前积分不足，暂时不能确认。';
-        return;
-      }
-      points.value -= item.cost;
-      item.status = 'approved';
-      rewardNotice.value = `兑换成功：${item.title}`;
-    }
-    function rejectReward(item) {
-      if (item.status !== 'pending') return;
-      item.status = 'rejected';
-      rewardNotice.value = `已取消“${item.title}”，积分没有扣除。`;
-    }
+      <section class="learning-stage" id="learning-stage">
+        <div class="focus">
+          <div class="visual">
+            <div class="object-art" id="object-art">
+              <img class="semantic-icon" src="assets/openmoji/1F44B.svg" alt="你好">
+            </div>
+            <div class="scene-art" id="scene-art" hidden>
+              <img id="scene-image" src="assets/undraw/conversation.svg" alt="">
+            </div>
+            <strong class="visual-label" id="visual-label">你好</strong>
+            <span class="visual-note" id="visual-note"></span>
+          </div>
 
-    function openUnit(i) { selectedUnit.value = i; view.value = 'course'; }
-    function startToday() { startTask('words'); }
-    function resetQuiz() {
-      stopListening();
-      quizIndex.value = 0;
-      score.value = 0;
-      answered.value = false;
-      selectedOption.value = -1;
-      lastCorrect.value = false;
-      resetSpeechState();
-    }
-    function startTask(key) {
-      if (key === 'game') {
-        location.href = 'garden-game.html';
-        return;
-      }
-      view.value = 'practice';
-      practiceMode.value = key === 'speak' ? 'speak' : key === 'words' ? 'listen' : 'quiz';
-      resetQuiz();
-    }
-    function switchMode(mode) {
-      if (practiceMode.value === mode) return;
-      practiceMode.value = mode;
-      resetQuiz();
-    }
-    function answer(i) {
-      if (answered.value) return;
-      selectedOption.value = i;
-      answered.value = true;
-      lastCorrect.value = i === currentQuiz.value.answer;
-      if (lastCorrect.value) {
-        score.value += 10;
-        awardPoints(2);
-        accuracy.value = Math.min(99, accuracy.value + 1);
-      } else {
-        mistakes.value = [{word:currentQuiz.value.audio || currentQuiz.value.prompt,reason:'刚刚答错 · 建议稍后复习'}, ...mistakes.value].slice(0, 4);
-      }
-    }
-    function nextQuiz() {
-      stopListening();
-      if (quizIndex.value < quizList.value.length - 1) {
-        quizIndex.value++;
-        answered.value = false;
-        selectedOption.value = -1;
-        lastCorrect.value = false;
-        resetSpeechState();
-      } else {
-        learned.value += 1;
-        minutes.value += 4;
-        awardPoints(5);
-        units[selectedUnit.value].progress = Math.min(100, units[selectedUnit.value].progress + 4);
-        view.value = 'home';
-      }
-    }
-    function leavePractice() {
-      stopListening();
-      view.value = 'home';
-    }
-    function resetSpeechState() {
-      speechPhase.value = 'idle';
-      countdown.value = 0;
-      listeningSeconds.value = 0;
-      recognizedText.value = '';
-      speechPassed.value = false;
-      speechAwarded.value = false;
-      speechMessage.value = SpeechRecognition ? '准备好后，点击“开始跟读”' : '当前浏览器不支持语音识别';
-      speechDetail.value = SpeechRecognition ? '第一次使用时，请允许浏览器访问麦克风。' : '请使用最新版 Chrome 或 Edge 打开。';
-    }
-    function normalizeSpeech(text) {
-      return String(text || '')
-        .toLowerCase()
-        .replace(/[’']/g, "'")
-        .replace(/\bwhat's\b/g, 'what is')
-        .replace(/\bi'm\b/g, 'i am')
-        .replace(/\bit's\b/g, 'it is')
-        .replace(/\bdon't\b/g, 'do not')
-        .replace(/[^a-z0-9\s]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    }
-    function levenshtein(a, b) {
-      const row = Array.from({length:b.length + 1}, (_, i) => i);
-      for (let i = 1; i <= a.length; i++) {
-        let previous = row[0];
-        row[0] = i;
-        for (let j = 1; j <= b.length; j++) {
-          const saved = row[j];
-          row[j] = a[i - 1] === b[j - 1] ? previous : 1 + Math.min(previous, row[j], row[j - 1]);
-          previous = saved;
-        }
-      }
-      return row[b.length];
-    }
-    function textSimilarity(a, b) {
-      return 1 - levenshtein(a, b) / Math.max(a.length, b.length, 1);
-    }
-    function evaluateSpeech(alternatives) {
-      const target = normalizeSpeech(currentQuiz.value.audio || currentQuiz.value.prompt);
-      const targetWords = target.split(' ').filter(Boolean);
-      const results = alternatives.map(raw => {
-        const heard = normalizeSpeech(raw);
-        const heardWords = heard.split(' ').filter(Boolean);
-        const matched = targetWords.filter(word => heardWords.some(candidate => candidate === word || textSimilarity(candidate, word) >= .72));
-        const coverage = matched.length / Math.max(targetWords.length, 1);
-        const similarity = textSimilarity(heard, target);
-        return {raw, score:similarity * .55 + coverage * .45, coverage, matched};
-      }).sort((a, b) => b.score - a.score);
-      const best = results[0] || {raw:'',score:0,coverage:0,matched:[]};
-      const threshold = targetWords.length <= 1 ? .64 : .66;
-      const passed = best.score >= threshold && best.coverage >= (targetWords.length <= 2 ? .5 : .6);
-      recognizedText.value = best.raw;
-      speechPassed.value = passed;
-      if (passed) {
-        speechMessage.value = '读出来啦，内容识别通过！';
-        speechDetail.value = '系统听到了目标句的主要内容，可以继续下一句。';
-        if (!speechAwarded.value) {
-          score.value += 10;
-          awardPoints(3);
-          speechAwarded.value = true;
-        }
-      } else {
-        const missing = targetWords.filter(word => !best.matched.includes(word));
-        speechMessage.value = '已经很接近了，再清楚一点';
-        speechDetail.value = missing.length ? '系统还没有听清：' + missing.join(' · ') : '请靠近麦克风，放慢一点再读一次。';
-      }
-      speechPhase.value = 'result';
-      clearTimeout(processingTimer);
-    }
-    function clearSpeechTimers() {
-      clearInterval(countdownTimer);
-      clearInterval(listeningTimer);
-      clearTimeout(stopTimer);
-      clearTimeout(startGuardTimer);
-      clearTimeout(processingTimer);
-      countdownTimer = null;
-      listeningTimer = null;
-      stopTimer = null;
-      startGuardTimer = null;
-      processingTimer = null;
-    }
-    function stopListening() {
-      speechSession++;
-      clearSpeechTimers();
-      const currentRecognizer = recognizer;
-      recognizer = null;
-      if (currentRecognizer) {
-        try { currentRecognizer.abort(); } catch (_) {}
-      }
-      recognitionHadResult = false;
-      recognitionFinalized = false;
-      recognitionAlternatives = [];
-      speechPhase.value = 'idle';
-      countdown.value = 0;
-      listeningSeconds.value = 0;
-    }
-    function setSpeechFailure(title, detail) {
-      clearSpeechTimers();
-      speechMessage.value = title;
-      speechDetail.value = detail;
-      speechPassed.value = false;
-      speechPhase.value = 'result';
-    }
-    async function checkMicrophoneAccess() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
-      try {
-        if (navigator.permissions && navigator.permissions.query) {
-          try {
-            const permission = await navigator.permissions.query({name:'microphone'});
-            if (permission.state === 'denied') throw new DOMException('Microphone denied', 'NotAllowedError');
-          } catch (error) {
-            if (error && error.name === 'NotAllowedError') throw error;
-          }
-        }
-        const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-        stream.getTracks().forEach(track => track.stop());
-        return true;
-      } catch (error) {
-        const denied = error && ['NotAllowedError','SecurityError'].includes(error.name);
-        setSpeechFailure(
-          denied ? '麦克风权限没有开启' : '暂时无法使用麦克风',
-          denied ? '请在浏览器地址栏或手机设置中允许本站使用麦克风，然后再试一次。' : '请检查麦克风是否被其他应用占用。'
-        );
-        return false;
-      }
-    }
-    function beginRecognition(session) {
-      if (session !== speechSession) return;
-      recognitionHadResult = false;
-      recognitionFinalized = false;
-      recognitionAlternatives = [];
-      recognizer = new SpeechRecognition();
-      recognizer.lang = 'en-US';
-      recognizer.continuous = false;
-      recognizer.interimResults = true;
-      recognizer.maxAlternatives = 5;
-      recognizer.onstart = () => {
-        if (session !== speechSession) return;
-        clearTimeout(startGuardTimer);
-        speechPhase.value = 'listening';
-        listeningSeconds.value = 0;
-        speechMessage.value = '正在听，请大声读出来';
-        speechDetail.value = '读完后点击“我读完了”，也可以停顿等待自动判断。';
-        listeningTimer = setInterval(() => { listeningSeconds.value += 1; }, 1000);
-        stopTimer = setTimeout(finishListening, 12000);
-      };
-      recognizer.onresult = event => {
-        if (session !== speechSession) return;
-        const result = event.results && event.results[event.resultIndex] || event.results && event.results[0];
-        const alternatives = result ? Array.from(result).map(item => item.transcript.trim()).filter(Boolean) : [];
-        if (!alternatives.length) return;
-        recognitionHadResult = true;
-        recognitionAlternatives = alternatives;
-        recognizedText.value = alternatives[0];
-        if (result.isFinal !== false) {
-          recognitionFinalized = true;
-          evaluateSpeech(alternatives);
-          try { recognizer.stop(); } catch (_) {}
-        }
-      };
-      recognizer.onnomatch = () => {
-        if (session === speechSession) setSpeechFailure('没有识别清楚', '请靠近麦克风，放慢一点再读一次。');
-      };
-      recognizer.onerror = event => {
-        if (session !== speechSession || event.error === 'aborted') return;
-        const messages = {
-          'no-speech':['没有听到声音','请靠近麦克风，大声读一遍。'],
-          'not-allowed':['麦克风权限没有开启','请在浏览器地址栏或手机设置中允许麦克风。'],
-          'audio-capture':['找不到麦克风','请检查设备麦克风是否被其他应用占用。'],
-          'network':['语音识别服务连接失败','请检查网络，安卓手机请优先使用最新版 Chrome。']
-        };
-        const message = messages[event.error] || ['这次没有听清','请再读一次。'];
-        setSpeechFailure(message[0], message[1]);
-      };
-      recognizer.onend = () => {
-        if (session !== speechSession) return;
-        clearInterval(listeningTimer);
-        clearTimeout(stopTimer);
-        clearTimeout(startGuardTimer);
-        if (speechPhase.value === 'result') return;
-        if (recognitionHadResult && recognitionAlternatives.length) {
-          evaluateSpeech(recognitionAlternatives);
-        } else {
-          setSpeechFailure('没有听到有效内容', '确认浏览器已有麦克风权限，点击开始后看到计时再朗读。');
-        }
-      };
-      try {
-        recognizer.start();
-        startGuardTimer = setTimeout(() => {
-          if (session !== speechSession || speechPhase.value !== 'preparing') return;
-          setSpeechFailure('语音识别没有启动', '安卓请使用最新版 Chrome，并确认系统没有禁止 Chrome 使用麦克风。');
-          try { recognizer.abort(); } catch (_) {}
-        }, 5000);
-      } catch (_) {
-        setSpeechFailure('麦克风启动失败', '请刷新页面，重新允许麦克风权限后再试。');
-      }
-    }
-    async function startListening() {
-      if (speechBusy.value) return;
-      if (!SpeechRecognition) {
-        speechMessage.value = '此浏览器暂不支持语音识别';
-        speechDetail.value = /Android/i.test(navigator.userAgent)
-          ? '请用最新版 Android Chrome 打开公网 HTTPS 地址，并在地址栏允许麦克风。部分安卓内置浏览器不支持此功能。'
-          : '请使用最新版 Chrome 或 Edge 打开公网 HTTPS 地址，并允许麦克风权限。';
-        speechPassed.value = false;
-        return;
-      }
-      if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-        speechMessage.value = '需要安全连接才能使用麦克风';
-        speechDetail.value = '请使用 https://liuqiming168-work.github.io/enl/ 打开，不要使用 http 或本地文件。';
-        speechPassed.value = false;
-        return;
-      }
-      stopListening();
-      const session = ++speechSession;
-      if (activeAudio) {
-        activeAudio.pause();
-        activeAudio.currentTime = 0;
-        activeAudio = null;
-      }
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-      recognizedText.value = '';
-      speechPassed.value = false;
-      speechPhase.value = 'preparing';
-      speechMessage.value = '正在检查麦克风…';
-      speechDetail.value = '首次使用时，请允许浏览器访问麦克风。';
-      if (!await checkMicrophoneAccess() || session !== speechSession) return;
-      countdown.value = 3;
-      speechMessage.value = '准备好，3 秒后开始';
-      speechDetail.value = '看到“正在听”的计时后再开始朗读。';
-      countdownTimer = setInterval(() => {
-        if (session !== speechSession) return;
-        countdown.value -= 1;
-        if (countdown.value > 0) {
-          speechMessage.value = `准备好，${countdown.value} 秒后开始`;
-          return;
-        }
-        clearInterval(countdownTimer);
-        beginRecognition(session);
-      }, 1000);
-    }
-    function finishListening() {
-      if (speechPhase.value !== 'listening') return;
-      clearInterval(listeningTimer);
-      clearTimeout(stopTimer);
-      speechPhase.value = 'processing';
-      speechMessage.value = '正在判断你读的内容…';
-      speechDetail.value = '请稍等一下。';
-      try { recognizer.stop(); } catch (_) {
-        if (recognitionAlternatives.length) evaluateSpeech(recognitionAlternatives);
-        else setSpeechFailure('没有听到有效内容', '请靠近麦克风再试一次。');
-      }
-      processingTimer = setTimeout(() => {
-        if (speechPhase.value !== 'processing') return;
-        if (recognitionAlternatives.length) evaluateSpeech(recognitionAlternatives);
-        else setSpeechFailure('没有收到识别结果', '请检查网络后再试一次。');
-      }, 4000);
-    }
-    function toggleListening() {
-      if (isListening.value) finishListening();
-      else if (speechBusy.value) return;
-      else startListening();
-    }
-    function confirmPractice() {
-      speechPassed.value = true;
-      speechMessage.value = '跟读完成！';
-      speechDetail.value = '当前浏览器不能自动识别，已记录这次自主练习。';
-      speechPhase.value = 'result';
-      if (!speechAwarded.value) {
-        score.value += 5;
-        awardPoints(1);
-        speechAwarded.value = true;
-      }
-    }
-    function speak(text) {
-      if (activeAudio) {
-        activeAudio.pause();
-        activeAudio.currentTime = 0;
-        activeAudio = null;
-      }
-      const selectedPack = window.AUDIO_PACKS && window.AUDIO_PACKS[selectedVoiceName.value];
-      const audioPath = selectedPack && selectedPack.files[text]
-        || window.AUDIO_FILES && window.AUDIO_FILES[text];
-      if (audioPath) {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-        isSpeaking.value = true;
-        activeAudio = new Audio(audioPath);
-        activeAudio.preload = 'auto';
-        activeAudio.onended = () => { isSpeaking.value = false; activeAudio = null; };
-        activeAudio.onerror = () => {
-          isSpeaking.value = false;
-          activeAudio = null;
-          speakWithSystemVoice(text);
-        };
-        activeAudio.play().catch(() => {
-          isSpeaking.value = false;
-          activeAudio = null;
-          speakWithSystemVoice(text);
-        });
-        return;
-      }
-      speakWithSystemVoice(text);
-    }
-    function speakWithSystemVoice(text) {
-      if (!window.speechSynthesis) return;
-      window.speechSynthesis.cancel();
-      isSpeaking.value = true;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = speechRate.value;
-      utterance.pitch = 1.02;
-      const voices = window.speechSynthesis.getVoices();
-      const preferred = ['Samantha','Karen','Moira','Google US English','Microsoft Zira','Tessa','Daniel'];
-      const voice = voices.find(v => preferred.some(n => v.name.includes(n)))
-        || voices.find(v => v.lang === 'en-US')
-        || voices.find(v => /^en(-|_)/i.test(v.lang));
-      if (voice) utterance.voice = voice;
-      utterance.onend = () => { isSpeaking.value = false; };
-      utterance.onerror = () => { isSpeaking.value = false; };
-      window.speechSynthesis.speak(utterance);
-    }
-    return {
-      nav,view,viewTitle,units,selectedUnit,activeUnit,tasks,modes,practiceMode,currentPractice,
-      currentQuiz,quizList,quizIndex,score,answered,selectedOption,lastCorrect,streak,weekDays,
-      learned,minutes,badges,accuracy,points,rewardCatalog,redemptions,rewardNotice,skills,mistakes,reportTip,speechRate,voiceOptions,
-      selectedVoiceName,speechSupported,speechPhase,speechBusy,speechButtonLabel,isListening,recognizedText,speechMessage,speechDetail,
-      speechPassed,speechResultClass,coachState,coachLabel,coachLine,openUnit,startToday,startTask,switchMode,answer,nextQuiz,
-      speak,toggleListening,confirmPractice,leavePractice,hasPendingReward,rewardButtonLabel,requestReward,approveReward,rejectReward
-    };
-  }
-}).mount('#app');
-</script>
+          <div class="work" id="spell-work">
+            <span class="kicker" id="word-count"></span>
+            <h2>看图拼单词</h2>
+            <p class="prompt-note" id="spell-instruction">先听完整单词，点选字母时也能听到它的声音。</p>
+            <div class="spelling-practice" id="spelling-practice">
+              <div class="slots" id="slots"></div>
+              <div class="letters" id="letters"></div>
+            </div>
+            <div class="actions">
+              <button class="icon-action primary" id="word-listen" title="听发音" aria-label="听发音">🔊</button>
+              <button class="icon-action" id="word-undo" title="撤回" aria-label="撤回">↶</button>
+              <button class="check" id="word-check">检查</button>
+              <button class="hint-button" id="word-hint" hidden>看看提示</button>
+              <button class="speak-shortcut" id="word-speak" hidden>🎤 顺便读一遍</button>
+              <button class="next" id="word-next" hidden>下一题 →</button>
+            </div>
+            <div class="feedback" id="word-feedback" aria-live="polite"></div>
+            <div class="answer-reveal" id="word-reveal" hidden>
+              <span>正确拼写</span><strong id="word-answer"></strong>
+            </div>
+          </div>
+
+          <div class="work" id="sentence-work" hidden>
+            <span class="kicker" id="sentence-count"></span>
+            <h2>听音组装小句子</h2>
+            <p class="prompt-note">先听短句，再选择打乱的单词。</p>
+            <div class="sentence-slots" id="sentence-slots"></div>
+            <div class="sentence-bank" id="sentence-bank"></div>
+            <div class="actions">
+              <button class="icon-action primary" id="sentence-listen" title="听短句" aria-label="听短句">🔊</button>
+              <button class="icon-action" id="sentence-reset" title="重新排列" aria-label="重新排列">↻</button>
+              <button class="check" id="sentence-check">检查</button>
+              <button class="hint-button" id="sentence-hint" hidden>看看提示</button>
+              <button class="next" id="sentence-next" hidden>下一句 →</button>
+            </div>
+            <div class="feedback" id="sentence-feedback" aria-live="polite"></div>
+            <div class="sentence-reveal" id="sentence-reveal" hidden>
+              <strong id="sentence-answer"></strong><span id="sentence-meaning"></span>
+            </div>
+          </div>
+
+          <div class="work speak-work" id="speak-work" hidden>
+            <div class="speak-kind-switch" role="group" aria-label="跟读内容">
+              <button class="active" data-speak-kind="word">单词跟读</button>
+              <button data-speak-kind="sentence">短句跟读</button>
+            </div>
+            <span class="kicker" id="speak-count"></span>
+            <h2 id="speak-target"></h2>
+            <p class="translation" id="speak-meaning"></p>
+            <div class="speak-actions">
+              <button class="demo-button" id="speak-listen">🔊 听示范</button>
+              <button class="record-button" id="speak-start">🎤 开始跟读</button>
+            </div>
+            <p class="speech-privacy">跟读录音仅用于本次发音评测，将发送至科大讯飞处理。</p>
+            <div class="speech-status" id="speech-status" hidden aria-live="polite">
+              <h3 id="speech-title"></h3>
+              <p id="speech-detail"></p>
+              <b id="speech-heard"></b>
+            </div>
+            <div class="actions"><button class="next" id="speak-next">下一句 →</button></div>
+          </div>
+        </div>
+
+        <aside class="picker">
+          <header class="picker-head">
+            <div><h3 id="picker-title"></h3><span id="picker-count"></span></div>
+            <div class="picker-pages">
+              <button id="picker-prev" title="上一组" aria-label="上一组">‹</button>
+              <button id="picker-next" title="下一组" aria-label="下一组">›</button>
+            </div>
+          </header>
+          <div class="picker-grid" id="picker-grid"></div>
+        </aside>
+      </section>
+
+      <section class="curriculum" id="curriculum">
+        <header class="curriculum-head">
+          <div><h2>教材地图</h2><p>人民教育出版社 · 三年级上册</p></div>
+          <span class="book-badge">同步教材内容</span>
+        </header>
+        <div class="unit-grid" id="unit-grid"></div>
+      </section>
+
+      <section class="reward-shop" id="reward-shop">
+        <header class="reward-head">
+          <div><h2>积分兑换站</h2><p>认真完成练习，攒积分换奖励</p></div>
+          <b><span id="reward-points">340</span> 积分可用</b>
+        </header>
+        <div class="reward-notice" id="reward-notice" hidden aria-live="polite"></div>
+        <div class="reward-grid" id="reward-grid"></div>
+        <div class="pending-area" id="pending-area" hidden>
+          <h3>等待家长确认</h3>
+          <div id="pending-list"></div>
+        </div>
+      </section>
+
+      <p class="credit">场景与奖励插画来自 <a href="https://github.com/balazser/undraw-svg-collection" target="_blank" rel="noreferrer">unDraw SVG Collection</a>，图标来自 OpenMoji。</p>
+    </main>
+  </div>
+
+  <script src="textbook-data.js"></script>
+  <script src="audio-data.js"></script>
+  <script src="phonics-data.js"></script>
+  <script src="vendor/xfyun-recorder/index.umd.js"></script>
+  <script src="xfyun-ise.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
