@@ -15,3 +15,6 @@ nohup.out
 
 # Local API credentials
 .xfyun.env
+
+# Cloudflare local build state
+.wrangler/
