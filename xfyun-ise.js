@@ -4,7 +4,12 @@
   const recorderPath = 'vendor/xfyun-recorder';
   let recorder = null;
   let socket = null;
-  let timer = null;
+  let recordTimer = null;
+  let resultTimer = null;
+  let uploadTimer = null;
+  let audioFrames = [];
+  let firstFrame = true;
+  let recorderEnded = false;
   let callbacks = {};
 
   function emit(name, value) {
@@ -27,8 +32,11 @@
   }
 
   function numberAttribute(element, name) {
-    const value = Number(element?.getAttribute(name));
-    return Number.isFinite(value) ? Math.round(value) : null;
+    const attribute = element?.getAttribute(name);
+    if (attribute == null || attribute === '') return null;
+    const value = Number(attribute);
+    if (!Number.isFinite(value)) return null;
+    return Math.round(value >= 0 && value <= 5 ? value * 20 : value);
   }
 
   function parseResult(encoded) {
@@ -57,8 +65,15 @@
   }
 
   function cleanup(closeSocket = true) {
-    clearTimeout(timer);
-    timer = null;
+    clearTimeout(recordTimer);
+    clearTimeout(resultTimer);
+    clearInterval(uploadTimer);
+    recordTimer = null;
+    resultTimer = null;
+    uploadTimer = null;
+    audioFrames = [];
+    firstFrame = true;
+    recorderEnded = false;
     if (recorder) {
       try { recorder.stop(); } catch (_) {}
       recorder = null;
@@ -67,6 +82,68 @@
       try { socket.close(1000); } catch (_) {}
     }
     socket = null;
+  }
+
+  function audioData(frameBuffer, status) {
+    return {
+      status,
+      encoding: 'raw',
+      data_type: 1,
+      data: frameBuffer ? bytesToBase64(frameBuffer) : ''
+    };
+  }
+
+  function sendAudioFrame(frameBuffer, text, category) {
+    if (!socket || socket.readyState !== WebSocket.OPEN) return;
+    if (firstFrame) {
+      firstFrame = false;
+      const textHeader = category === 'read_word' ? '[word]' : '[content]';
+      socket.send(JSON.stringify({
+        common: { app_id: socket.appId },
+        business: {
+          category,
+          rstcd: 'utf8',
+          group: 'pupil',
+          sub: 'ise',
+          tte: 'utf-8',
+          ttp_skip: true,
+          cmd: 'ssb',
+          auf: 'audio/L16;rate=16000',
+          ent: 'en_vip',
+          aus: 1,
+          aue: 'raw',
+          rst: 'entirety',
+          ise_unite: '1',
+          extra_ability: 'multi_dimension;syll_phone_err_msg',
+          text: `\uFEFF${textHeader}\n${text}`
+        },
+        data: audioData(frameBuffer, 0)
+      }));
+      return;
+    }
+    socket.send(JSON.stringify({
+      business: { aue: 'raw', cmd: 'auw', aus: 2 },
+      data: audioData(frameBuffer, 1)
+    }));
+  }
+
+  function startUpload(text, category) {
+    uploadTimer = setInterval(() => {
+      if (!socket || socket.readyState !== WebSocket.OPEN) return;
+      const frame = audioFrames.shift();
+      if (frame) {
+        sendAudioFrame(frame, text, category);
+        return;
+      }
+      if (!recorderEnded || firstFrame) return;
+      clearInterval(uploadTimer);
+      uploadTimer = null;
+      socket.send(JSON.stringify({
+        business: { aue: 'raw', cmd: 'auw', aus: 4 },
+        data: audioData(null, 2)
+      }));
+      emit('onState', 'processing');
+    }, 40);
   }
 
   async function start({ text, category = 'read_sentence', ...handlers }) {
@@ -91,40 +168,18 @@
 
     recorder = new RecorderManager(recorderPath);
     socket = new WebSocket(auth.url);
+    socket.appId = auth.appId;
     recorder.onStart = () => {
       emit('onState', 'recording');
-      timer = setTimeout(stop, 8000);
+      recordTimer = setTimeout(stop, 8000);
     };
     recorder.onFrameRecorded = ({ isLastFrame, frameBuffer }) => {
-      if (!socket || socket.readyState !== WebSocket.OPEN) return;
-      socket.send(JSON.stringify({
-        business: { aue: 'raw', cmd: 'auw', aus: isLastFrame ? 4 : 2 },
-        data: { status: isLastFrame ? 2 : 1, data: bytesToBase64(frameBuffer), data_type: 1 }
-      }));
-      if (isLastFrame) emit('onState', 'processing');
+      if (frameBuffer?.byteLength) audioFrames.push(frameBuffer);
+      if (isLastFrame) recorderEnded = true;
     };
     socket.onopen = async () => {
-      socket.send(JSON.stringify({
-        common: { app_id: auth.appId },
-        business: {
-          category,
-          rstcd: 'utf8',
-          sub: 'ise',
-          tte: 'utf-8',
-          ttp_skip: true,
-          cmd: 'ssb',
-          auf: 'audio/L16;rate=16000',
-          ent: 'en_vip',
-          aus: 1,
-          aue: 'raw',
-          rst: 'entirety',
-          ise_unite: '1',
-          extra_ability: 'multi_dimension;syll_phone_err_msg',
-          text: `\uFEFF[content]\n${text}`
-        },
-        data: { status: 0 }
-      }));
       try {
+        startUpload(text, category);
         await recorder.start({ sampleRate: 16000, frameSize: 1280 });
       } catch (error) {
         cleanup();
@@ -158,10 +213,11 @@
   }
 
   function stop() {
-    clearTimeout(timer);
+    clearTimeout(recordTimer);
+    recordTimer = null;
     if (recorder) {
       recorder.stop();
-      timer = setTimeout(() => {
+      resultTimer = setTimeout(() => {
         const error = new Error('评分等待超时，请再读一次。');
         error.code = 'RESULT_TIMEOUT';
         cleanup();
