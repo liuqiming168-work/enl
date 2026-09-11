@@ -1,0 +1,7 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "liujin-enl-xfyun",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-12",
+  "workers_dev": true
+}
