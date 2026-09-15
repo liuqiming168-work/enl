@@ -16,6 +16,15 @@
   let firstFrame = true;
   let recorderEnded = false;
   let callbacks = {};
+  let activeFail = null;
+  let recordingStartedAt = 0;
+  let noiseLevels = [];
+  let voiceThreshold = 0.018;
+  let speechStarted = false;
+  let activeFrameCount = 0;
+  let silentDuration = 0;
+  let stopSilence = 1000;
+  let stopRequested = false;
 
   function emit(name, value) {
     if (typeof callbacks[name] === 'function') callbacks[name](value);
@@ -42,6 +51,35 @@
     const value = Number(attribute);
     if (!Number.isFinite(value)) return null;
     return Math.round(value >= 0 && value <= 5 ? value * 20 : value);
+  }
+
+  function frameRms(frameBuffer) {
+    const view = new DataView(frameBuffer);
+    let sum = 0;
+    let count = 0;
+    for (let offset = 0; offset + 1 < view.byteLength; offset += 2) {
+      const value = view.getInt16(offset, true) / 32768;
+      sum += value * value;
+      count += 1;
+    }
+    return count ? Math.sqrt(sum / count) : 0;
+  }
+
+  function frameDuration(frameBuffer) {
+    return frameBuffer.byteLength / 2 / 16000 * 1000;
+  }
+
+  function calibrateThreshold() {
+    if (!noiseLevels.length) return 0.018;
+    const levels = [...noiseLevels].sort((a, b) => a - b);
+    const baseline = levels[Math.floor(levels.length * .3)] || 0;
+    return Math.max(.014, Math.min(.055, baseline * 2.8 + .004));
+  }
+
+  function noSpeechError() {
+    const error = new Error('没有听到有效朗读，请在“正在听”后开始读。');
+    error.code = 'NO_SPEECH';
+    return error;
   }
 
   function parseResult(encoded) {
@@ -89,6 +127,14 @@
     audioFrames = [];
     firstFrame = true;
     recorderEnded = false;
+    activeFail = null;
+    recordingStartedAt = 0;
+    noiseLevels = [];
+    voiceThreshold = .018;
+    speechStarted = false;
+    activeFrameCount = 0;
+    silentDuration = 0;
+    stopRequested = false;
     if (recorder) {
       try { recorder.stop(); } catch (_) {}
       recorder = null;
@@ -145,6 +191,7 @@
   function startUpload(text, category) {
     uploadTimer = setInterval(() => {
       if (!socket || socket.readyState !== WebSocket.OPEN) return;
+      if (!speechStarted) return;
       const frame = audioFrames.shift();
       if (frame) {
         sendAudioFrame(frame, text, category);
@@ -191,7 +238,7 @@
     const auth = await response.json().catch(() => ({}));
     if (!response.ok) {
       const error = new Error(auth.error || '讯飞签名服务不可用。');
-      error.code = response.status === 404 || response.status === 503 ? 'NOT_CONFIGURED' : 'AUTH_FAILED';
+      error.code = response.status === 403 || response.status === 404 || response.status === 503 ? 'NOT_CONFIGURED' : 'AUTH_FAILED';
       throw error;
     }
 
@@ -206,6 +253,7 @@
       cleanup();
       emit('onError', error);
     };
+    activeFail = fail;
     socketTimer = setTimeout(() => {
       const error = new Error('连接讯飞评测超时，请检查网络后重试。');
       error.code = 'SERVICE_UNAVAILABLE';
@@ -216,11 +264,37 @@
       clearTimeout(recorderStartTimer);
       recorderStartTimer = null;
       emit('onState', 'recording');
-      recordTimer = setTimeout(stop, 8000);
+      recordingStartedAt = Date.now();
+      stopSilence = category === 'read_word' ? 1000 : 1400;
+      recordTimer = setTimeout(() => {
+        if (speechStarted) stop();
+        else fail(noSpeechError());
+      }, category === 'read_word' ? 6000 : 12000);
     };
     recorder.onFrameRecorded = ({ isLastFrame, frameBuffer }) => {
       if (failed || runId !== runSequence) return;
-      if (frameBuffer?.byteLength) audioFrames.push(frameBuffer);
+      if (frameBuffer?.byteLength) {
+        audioFrames.push(frameBuffer);
+        const elapsed = Date.now() - recordingStartedAt;
+        const rms = frameRms(frameBuffer);
+        const duration = frameDuration(frameBuffer);
+        if (elapsed <= 800 && rms < .02) {
+          noiseLevels.push(rms);
+          voiceThreshold = calibrateThreshold();
+        }
+        const active = rms >= voiceThreshold;
+        if (!speechStarted) {
+          activeFrameCount = active ? activeFrameCount + 1 : Math.max(0, activeFrameCount - 1);
+          if (activeFrameCount >= 3) {
+            speechStarted = true;
+            silentDuration = 0;
+            emit('onState', 'voice-start');
+          }
+        } else {
+          silentDuration = active ? 0 : silentDuration + duration;
+          if (elapsed >= 800 && silentDuration >= stopSilence) stop();
+        }
+      }
       if (isLastFrame) recorderEnded = true;
     };
     socket.onopen = async () => {
@@ -265,6 +339,13 @@
   }
 
   function stop() {
+    if (stopRequested) return;
+    if (!speechStarted) {
+      const fail = activeFail;
+      if (fail) fail(noSpeechError());
+      return;
+    }
+    stopRequested = true;
     clearTimeout(recordTimer);
     recordTimer = null;
     if (recorder) {

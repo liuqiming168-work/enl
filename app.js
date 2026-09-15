@@ -12,6 +12,7 @@
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const unitMeta = [
     { id: 'Unit 1', title: 'Making friends', subtitle: '问候、介绍与友谊', icon: '1F44B', color: '#58c58a', parts: ['Part A', 'Part B', 'Part C'] },
@@ -97,7 +98,9 @@
     speechTimer: null,
     speechGuard: null,
     speechStartedAt: 0,
-    speechRetryCount: 0
+    speechRetryCount: 0,
+    interactionLocked: false,
+    animationTimers: []
   };
 
   function dayKey() {
@@ -319,16 +322,115 @@
     return Boolean(state.completed[completionKey(mode, index)]);
   }
 
+  function scheduleAnimation(action, delay) {
+    const timer = setTimeout(action, reduceMotion ? 0 : delay);
+    state.animationTimers.push(timer);
+    return timer;
+  }
+
+  function clearPracticeAnimations() {
+    state.animationTimers.forEach(clearTimeout);
+    state.animationTimers = [];
+    $$('.flying-piece, .coin-particle, .reward-label, .success-spark').forEach(element => element.remove());
+    state.interactionLocked = false;
+  }
+
+  function animateTransfer(text, from, to, reverse = false) {
+    if (reduceMotion || !from || !to) return Promise.resolve();
+    const clone = document.createElement('span');
+    clone.className = 'flying-piece';
+    clone.textContent = text;
+    Object.assign(clone.style, {
+      left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`
+    });
+    document.body.appendChild(clone);
+    const dx = to.left - from.left;
+    const dy = to.top - from.top;
+    const curve = Math.min(28, Math.abs(dy) * .18) * (reverse ? -1 : 1);
+    const animation = clone.animate([
+      { transform: 'translate(0,0) scale(1)' },
+      { transform: `translate(${dx * .52}px,${dy * .48 + curve}px) scale(1.13)`, offset: .52 },
+      { transform: `translate(${dx}px,${dy}px) scale(.92)` }
+    ], { duration: 380, easing: 'cubic-bezier(.2,.78,.24,1)', fill: 'forwards' });
+    return animation.finished.catch(() => {}).finally(() => clone.remove());
+  }
+
+  function animateSparks(source) {
+    if (reduceMotion || !source) return;
+    const bounds = source.getBoundingClientRect();
+    const x = bounds.left + bounds.width / 2;
+    const y = bounds.top + bounds.height / 2;
+    for (let index = 0; index < 8; index += 1) {
+      const spark = document.createElement('span');
+      const angle = Math.PI * 2 * index / 8 - Math.PI / 2;
+      const distance = 38 + index % 2 * 15;
+      spark.className = 'success-spark';
+      spark.textContent = index % 2 ? '•' : '✦';
+      spark.style.left = `${x}px`;
+      spark.style.top = `${y}px`;
+      document.body.appendChild(spark);
+      spark.animate([
+        { opacity: 0, transform: 'translate(-50%,-50%) scale(.2)' },
+        { opacity: 1, transform: `translate(calc(-50% + ${Math.cos(angle) * distance * .55}px),calc(-50% + ${Math.sin(angle) * distance * .55}px)) scale(1.2)`, offset: .42 },
+        { opacity: 0, transform: `translate(calc(-50% + ${Math.cos(angle) * distance}px),calc(-50% + ${Math.sin(angle) * distance}px)) scale(.5)` }
+      ], { duration: 650, delay: index * 28, easing: 'ease-out' }).finished.catch(() => {}).finally(() => spark.remove());
+    }
+  }
+
+  function animateReward(source, amount) {
+    if (!source) return;
+    const targetElement = $('#points-button');
+    const from = source.getBoundingClientRect();
+    const target = targetElement.getBoundingClientRect();
+    const startX = from.left + from.width / 2 - 13;
+    const startY = from.top + from.height / 2 - 13;
+    const endX = target.left + target.width * .32 - 13;
+    const endY = target.top + target.height / 2 - 13;
+    const hit = () => replayClass(targetElement, 'score-hit', 520);
+    if (reduceMotion) { hit(); return; }
+    const label = document.createElement('span');
+    label.className = 'reward-label';
+    label.textContent = `+${amount} 积分`;
+    label.style.left = `${startX - 18}px`;
+    label.style.top = `${startY - 5}px`;
+    document.body.appendChild(label);
+    label.animate([
+      { opacity: 0, transform: 'translateY(8px) scale(.8)' },
+      { opacity: 1, transform: 'translateY(-22px) scale(1.05)', offset: .35 },
+      { opacity: 0, transform: 'translateY(-42px)' }
+    ], { duration: 760, easing: 'ease-out' }).finished.catch(() => {}).finally(() => label.remove());
+    for (let index = 0; index < 6; index += 1) {
+      const coin = document.createElement('span');
+      coin.className = 'coin-particle';
+      coin.textContent = '★';
+      coin.style.left = `${startX}px`;
+      coin.style.top = `${startY}px`;
+      document.body.appendChild(coin);
+      const scatterX = (index - 2.5) * 13;
+      const scatterY = -30 - index % 3 * 9;
+      coin.animate([
+        { opacity: 0, transform: 'translate(0,0) scale(.45)' },
+        { opacity: 1, transform: `translate(${scatterX}px,${scatterY}px) scale(1.08) rotate(${index * 35}deg)`, offset: .24 },
+        { opacity: 1, transform: `translate(${(endX - startX) * .56 + scatterX}px,${(endY - startY) * .45 - 34}px) scale(.95) rotate(${index * 150}deg)`, offset: .62 },
+        { opacity: .1, transform: `translate(${endX - startX}px,${endY - startY}px) scale(.35) rotate(${index * 260}deg)` }
+      ], { duration: 820, delay: index * 85, easing: 'cubic-bezier(.2,.72,.25,1)', fill: 'forwards' }).finished.catch(() => {}).finally(() => {
+        coin.remove();
+        if (index === 5) hit();
+      });
+    }
+  }
+
   function award(mode, index, amount) {
     const key = completionKey(mode, index);
-    if (state.completed[key]) return;
+    if (state.completed[key]) return false;
     state.completed[key] = true;
     state.points += amount;
     state.todayCount += 1;
     saveState();
     updateSummary();
-    renderMap();
+    renderMap(false);
     renderRewards();
+    return true;
   }
 
   function unitProgress(unitIndex) {
@@ -378,6 +480,7 @@
   }
 
   function renderWord() {
+    clearPracticeAnimations();
     const item = currentWord();
     state.picked = Array(cleanLetters(item.text).length).fill(null);
     state.wordAttempts = 0;
@@ -404,8 +507,8 @@
     const target = cleanLetters(currentWord().text);
     $('#slots').innerHTML = Array.from({ length: target.length }, (_, index) => {
       const picked = state.picked[index];
-      const resultClass = state.wordAttempts >= 2 && picked ? (picked.letter === target[index] ? ' correct-position' : ' wrong-position') : '';
-      const locked = state.wordAttempts >= 2 && picked?.letter === target[index];
+      const resultClass = state.wordAttempts >= 1 && picked ? (picked.letter === target[index] ? ' correct-position' : ' wrong-position') : '';
+      const locked = state.wordAttempts >= 1 && picked?.letter === target[index];
       return picked
         ? `<button class="slot${resultClass}" data-picked-letter="${index}" ${locked ? 'disabled' : ''} title="点击放回字母区">${picked.letter}</button>`
         : '<span class="slot"></span>';
@@ -420,6 +523,7 @@
   }
 
   function resetSentence() {
+    clearPracticeAnimations();
     const tokens = sentenceTokens();
     state.sentencePicked = Array(tokens.length).fill(null);
     state.sentenceAttempts = 0;
@@ -446,9 +550,14 @@
   function renderSentence() {
     const tokens = sentenceTokens();
     $('#sentence-slots').innerHTML = Array.from({ length: tokens.length }, (_, index) => state.sentencePicked[index]
-      ? `<button class="sentence-slot filled${state.sentenceAttempts >= 2 ? (state.sentencePicked[index].word === tokens[index] ? ' correct-position' : ' wrong-position') : ''}" data-used-token="${index}" ${state.sentenceAttempts >= 2 && state.sentencePicked[index].word === tokens[index] ? 'disabled' : ''} title="点击放回单词区">${state.sentencePicked[index].word}</button>`
+      ? `<button class="sentence-slot filled${state.sentenceAttempts >= 1 ? (state.sentencePicked[index].word === tokens[index] ? ' correct-position' : ' wrong-position') : ''}" data-used-token="${index}" ${state.sentenceAttempts >= 1 && state.sentencePicked[index].word === tokens[index] ? 'disabled' : ''} title="点击放回单词区">${state.sentencePicked[index].word}</button>`
       : '<span class="sentence-slot"></span>').join('');
     $('#sentence-bank').innerHTML = state.sentencePool.map(item => `<button class="word-chip" data-token-id="${item.id}" ${state.sentencePicked.some(used => used?.id === item.id) ? 'disabled' : ''}>${item.word}</button>`).join('');
+  }
+
+  function setSpeechVisual(phase, good = false) {
+    const visual = $('#recording-visual');
+    visual.className = `recording-visual ${phase}${good ? ' good' : ''}`;
   }
 
   function resetSpeech() {
@@ -461,6 +570,7 @@
     $('#speech-status').className = 'speech-status';
     $('#speak-start').classList.remove('listening');
     $('#speak-start').textContent = '🎤 开始跟读';
+    setSpeechVisual('idle');
   }
 
   function renderSpeak() {
@@ -527,20 +637,71 @@
     }).join('');
   }
 
-  function renderMap() {
+  function unitSceneMarkup(index) {
+    const ground = '<span class="scene-ground"></span>';
+    const sun = '<img class="scene-sun motion-sun" src="assets/openmoji/2600.svg" alt="">';
+    if (index === 0) return `<div class="unit-scene greeting-scene" data-scene="greeting">${ground}${sun}<img class="person-a motion-a" src="assets/openmoji/1F466.svg" alt=""><img class="person-b motion-b" src="assets/openmoji/1F467.svg" alt=""><img class="wave motion-wave" src="assets/openmoji/1F44B.svg" alt=""></div>`;
+    if (index === 1) return `<div class="unit-scene family-scene" data-scene="family">${ground}${sun}<img class="house" src="assets/openmoji/1F3E0.svg" alt=""><img class="person father motion-father" src="assets/openmoji/1F468.svg" alt=""><img class="person child motion-child" src="assets/openmoji/1F467.svg" alt=""><img class="person mother motion-mother" src="assets/openmoji/1F469.svg" alt=""><img class="heart motion-heart" src="assets/openmoji/2764.svg" alt=""></div>`;
+    if (index === 2) return `<div class="unit-scene animal-scene" data-scene="animals">${ground}<span class="pond"></span><img class="scene-tree motion-tree" src="assets/openmoji/1F333.svg" alt=""><img class="bird motion-bird" src="assets/openmoji/1F426.svg" alt=""><img class="rabbit motion-rabbit" src="assets/openmoji/1F407.svg" alt=""><img class="fish motion-fish" src="assets/openmoji/1F41F.svg" alt=""></div>`;
+    if (index === 3) return `<div class="unit-scene farm-scene" data-scene="farm">${ground}<span class="field"></span>${sun}<img class="barn" src="assets/openmoji/1F3E0.svg" alt=""><img class="sprout one motion-sprout" src="assets/openmoji/1F331.svg" alt=""><img class="sprout two motion-sprout" src="assets/openmoji/1F331.svg" alt=""><img class="sprout three motion-sprout" src="assets/openmoji/1F331.svg" alt=""><img class="tractor motion-tractor" src="assets/openmoji/1F69C.svg" alt=""></div>`;
+    if (index === 4) return `<div class="unit-scene colour-scene" data-scene="colours">${ground}<img class="rainbow motion-rainbow" src="assets/openmoji/1F308.svg" alt=""><img class="palette motion-palette" src="assets/openmoji/1F3A8.svg" alt=""><img class="flower motion-flower" src="assets/openmoji/1F33C.svg" alt=""></div>`;
+    return `<div class="unit-scene number-scene" data-scene="numbers">${ground}<span class="number-pop n1">1</span><span class="number-pop n2">2</span><span class="number-pop n3">3</span><img class="cake motion-cake" src="assets/openmoji/1F382.svg" alt=""><img class="party motion-party" src="assets/openmoji/1F389.svg" alt=""></div>`;
+  }
+
+  function animateSceneElement(element, frames, options) {
+    if (!element) return;
+    element.getAnimations().forEach(animation => animation.cancel());
+    element.animate(frames, { fill: 'both', ...options, duration: reduceMotion ? 1 : options.duration, delay: reduceMotion ? 0 : options.delay || 0 });
+  }
+
+  function playUnitScene(card, delay = 0) {
+    const scene = card?.querySelector('[data-scene]');
+    if (!scene) return;
+    const kind = scene.dataset.scene;
+    if (kind === 'greeting') {
+      animateSceneElement(scene.querySelector('.motion-a'), [{ opacity: 0, transform: 'translateX(-22px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 820, delay, easing: 'ease-out' });
+      animateSceneElement(scene.querySelector('.motion-b'), [{ opacity: 0, transform: 'translateX(22px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 820, delay: delay + 120, easing: 'ease-out' });
+      animateSceneElement(scene.querySelector('.motion-wave'), [{ opacity: 0, transform: 'translateY(12px) rotate(-18deg) scale(.5)' }, { opacity: 1, transform: 'translateY(0) rotate(18deg) scale(1.08)', offset: .65 }, { opacity: 1, transform: 'rotate(-7deg) scale(1)' }], { duration: 920, delay: delay + 380, easing: 'ease-out' });
+    } else if (kind === 'family') {
+      ['.motion-father', '.motion-child', '.motion-mother'].forEach((selector, index) => animateSceneElement(scene.querySelector(selector), [{ opacity: 0, transform: `${selector.includes('child') ? 'translateX(-50%) ' : ''}translateY(16px) scale(.75)` }, { opacity: 1, transform: `${selector.includes('child') ? 'translateX(-50%) ' : ''}translateY(-3px) scale(1.08)`, offset: .68 }, { opacity: 1, transform: `${selector.includes('child') ? 'translateX(-50%) ' : ''}translateY(0) scale(1)` }], { duration: 1100, delay: delay + index * 120, easing: 'cubic-bezier(.2,.8,.25,1)' }));
+      animateSceneElement(scene.querySelector('.motion-heart'), [{ opacity: 0, transform: 'translate(-50%,12px) scale(.4)' }, { opacity: 1, transform: 'translate(-50%,-5px) scale(1.15)', offset: .65 }, { opacity: .9, transform: 'translate(-50%,-1px) scale(1)' }], { duration: 1100, delay: delay + 480, easing: 'ease-out' });
+    } else if (kind === 'animals') {
+      animateSceneElement(scene.querySelector('.motion-bird'), [{ opacity: 0, transform: 'translate(-24px,9px) rotate(-6deg)' }, { opacity: 1, offset: .18 }, { opacity: 1, transform: 'translate(34px,-14px) rotate(5deg)' }], { duration: 1400, delay, easing: 'ease-in-out' });
+      animateSceneElement(scene.querySelector('.motion-rabbit'), [{ opacity: 0, transform: 'translateY(8px) scale(.8)' }, { opacity: 1, transform: 'translateY(-15px) scale(.96,1.07)', offset: .52 }, { opacity: 1, transform: 'translateY(0) scale(1)' }], { duration: 1000, delay: delay + 180, easing: 'ease-out' });
+      animateSceneElement(scene.querySelector('.motion-fish'), [{ transform: 'translateX(-18px) scaleX(1)' }, { transform: 'translateX(20px) scaleX(1)', offset: .48 }, { transform: 'translateX(20px) scaleX(-1)', offset: .52 }, { transform: 'translateX(-3px) scaleX(-1)' }], { duration: 1450, delay: delay + 100, easing: 'ease-in-out' });
+      animateSceneElement(scene.querySelector('.motion-tree'), [{ transform: 'rotate(-3deg)' }, { transform: 'rotate(3deg)' }, { transform: 'rotate(0)' }], { duration: 1300, delay, easing: 'ease-in-out' });
+    } else if (kind === 'farm') {
+      const distance = Math.round(scene.clientWidth * .72);
+      animateSceneElement(scene.querySelector('.motion-tractor'), [{ transform: 'translateX(0) scaleX(-1) rotate(-2deg)' }, { transform: `translateX(${distance}px) scaleX(-1) rotate(2deg)`, offset: .88 }, { transform: `translateX(${distance + 8}px) scaleX(-1) rotate(0)` }], { duration: 1750, delay, easing: 'cubic-bezier(.2,.65,.3,1)' });
+      scene.querySelectorAll('.motion-sprout').forEach((sprout, index) => animateSceneElement(sprout, [{ opacity: .2, transform: 'scale(.25)' }, { opacity: 1, transform: 'scale(1.12)', offset: .72 }, { opacity: 1, transform: 'scale(1)' }], { duration: 720, delay: delay + 580 + index * 140, easing: 'ease-out' }));
+    } else if (kind === 'colours') {
+      animateSceneElement(scene.querySelector('.motion-rainbow'), [{ opacity: 0, transform: 'translateX(-50%) scale(.55)' }, { opacity: 1, transform: 'translateX(-50%) scale(1.08)', offset: .7 }, { opacity: 1, transform: 'translateX(-50%) scale(1)' }], { duration: 1150, delay, easing: 'ease-out' });
+      animateSceneElement(scene.querySelector('.motion-palette'), [{ transform: 'translateY(18px) rotate(-16deg)', opacity: 0 }, { transform: 'translateY(0) rotate(7deg)', opacity: 1, offset: .72 }, { transform: 'rotate(0)', opacity: 1 }], { duration: 1000, delay: delay + 240, easing: 'ease-out' });
+      animateSceneElement(scene.querySelector('.motion-flower'), [{ transform: 'scale(.25) rotate(-20deg)', opacity: 0 }, { transform: 'scale(1.12) rotate(5deg)', opacity: 1, offset: .72 }, { transform: 'scale(1)', opacity: 1 }], { duration: 850, delay: delay + 420, easing: 'ease-out' });
+    } else if (kind === 'numbers') {
+      scene.querySelectorAll('.number-pop').forEach((number, index) => animateSceneElement(number, [{ opacity: 0, transform: 'translateY(14px) scale(.5)' }, { opacity: 1, transform: 'translateY(-5px) scale(1.13)', offset: .68 }, { opacity: 1, transform: 'translateY(0) scale(1)' }], { duration: 720, delay: delay + index * 170, easing: 'ease-out' }));
+      animateSceneElement(scene.querySelector('.motion-cake'), [{ transform: 'translateX(-50%) scale(.6)', opacity: 0 }, { transform: 'translateX(-50%) scale(1.1)', opacity: 1, offset: .72 }, { transform: 'translateX(-50%) scale(1)', opacity: 1 }], { duration: 950, delay: delay + 330, easing: 'ease-out' });
+      animateSceneElement(scene.querySelector('.motion-party'), [{ opacity: 0, transform: 'scale(.4) rotate(-24deg)' }, { opacity: 1, transform: 'scale(1.2) rotate(8deg)', offset: .68 }, { opacity: 1, transform: 'scale(1)' }], { duration: 820, delay: delay + 650, easing: 'ease-out' });
+    }
+  }
+
+  function renderMap(playIntro = false) {
     $('#unit-grid').innerHTML = unitMeta.map((meta, index) => {
       const content = contentFor(index);
       const progress = unitProgress(index);
-      return `<button class="unit-node ${state.unit === index ? 'active' : ''} ${meta.revision ? 'revision' : ''}" data-unit-index="${index}" style="--unit-color:${meta.color}" title="进入 ${meta.id}">
-        <img src="assets/openmoji/${meta.icon}.svg" alt="">
+      if (meta.revision) return `<button class="unit-node revision ${state.unit === index ? 'active' : ''}" data-unit-index="${index}" style="--unit-color:${meta.color}" title="进入 ${meta.id}"><img src="assets/openmoji/${meta.icon}.svg" alt=""><span class="unit-number">${meta.id.toUpperCase()}</span><strong>${meta.title}</strong><small>${meta.subtitle} · ${progress ? `${progress}%` : '未开始'}</small><span class="parts">${meta.parts.map(part => `<span>${part}</span>`).join('')}</span><span class="unit-progress"><i style="width:${progress}%"></i></span><small>${content.words.length + content.people.length} 个词汇 · ${content.sentences.length} 个句型</small></button>`;
+      return `<button class="unit-node ${state.unit === index ? 'active' : ''}" data-unit-index="${index}" style="--unit-color:${meta.color}" title="进入 ${meta.id}">
+        ${unitSceneMarkup(index)}<span class="unit-copy">
         <span class="unit-number">${meta.id.toUpperCase()}</span>
         <strong>${meta.title}</strong>
         <small>${meta.subtitle} · ${progress ? `${progress}%` : '未开始'}</small>
         <span class="parts">${meta.parts.map(part => `<span>${part}</span>`).join('')}</span>
         <span class="unit-progress"><i style="width:${progress}%"></i></span>
         <small>${content.words.length + content.people.length} 个词汇 · ${content.sentences.length} 个句型</small>
+        </span>
       </button>`;
     }).join('');
+    if (playIntro) $$('.unit-node:not(.revision)').forEach((card, index) => playUnitScene(card, index * 170));
   }
 
   function firstIncomplete(mode) {
@@ -659,6 +820,7 @@
     $('#speech-heard').textContent = heard ? `${heardLabel}：“${heard}”` : '';
     $('#speak-start').classList.remove('listening');
     $('#speak-start').textContent = '🎤 再读一次';
+    setSpeechVisual('result', good);
     if (state.speakKind === 'word') {
       $('#speak-target').textContent = currentWord().text;
       $('#speak-target').classList.add('revealed');
@@ -683,7 +845,8 @@
     const problemWords = result.problemWords?.join('、') || '';
     showSpeechResult(passed, title, dimensions || '讯飞已完成本次发音评测。', problemWords, '再注意');
     if (passed) {
-      award(speakCompletionMode(), currentSpeakIndex(), state.speakKind === 'word' ? 1 : 3);
+      const amount = state.speakKind === 'word' ? 1 : 3;
+      if (award(speakCompletionMode(), currentSpeakIndex(), amount)) animateReward($('#recording-visual'), amount);
       renderPicker();
     }
   }
@@ -695,7 +858,8 @@
     const passed = best >= .7;
     if (passed) {
       showSpeechResult(true, '读出来啦，内容识别通过！', '目标句的主要内容已经识别到。', heard[0] || '');
-      award(speakCompletionMode(), currentSpeakIndex(), state.speakKind === 'word' ? 1 : 3);
+      const amount = state.speakKind === 'word' ? 1 : 3;
+      if (award(speakCompletionMode(), currentSpeakIndex(), amount)) animateReward($('#recording-visual'), amount);
       renderPicker();
     } else {
       showSpeechResult(false, '听到了，再慢一点试一次。', '注意把句子里的单词说完整。', heard[0] || '');
@@ -722,6 +886,7 @@
     state.speechPhase = 'processing';
     $('#speak-start').classList.remove('listening');
     $('#speak-start').textContent = '正在判断…';
+    setSpeechVisual('processing');
     try {
       if (state.recognitionEngine === 'xfyun' && xfyunISE) xfyunISE.stop();
       else state.recognizer.stop();
@@ -760,16 +925,21 @@
       state.speechPhase = 'listening';
       state.speechStartedAt = Date.now();
       $('#speech-title').textContent = '正在听你朗读';
-      $('#speech-detail').textContent = '读完后点击“我读完了”。';
+      $('#speech-detail').textContent = '请开始朗读，停顿后会自动判断。';
       $('#speak-start').classList.add('listening');
-      $('#speak-start').textContent = '■ 我读完了';
-      state.speechTimer = setTimeout(finishRecognition, 8000);
+      $('#speak-start').textContent = '■ 提前结束';
+      setSpeechVisual('listening');
+      state.speechTimer = setTimeout(finishRecognition, state.speakKind === 'word' ? 6000 : 12000);
     };
     recognition.onresult = event => {
       if (session !== state.speechSession) return;
       const result = event.results[event.resultIndex] || event.results[0];
       const alternatives = result ? Array.from(result).map(item => item.transcript.trim()).filter(Boolean) : [];
-      if (alternatives.length) state.speechResults = alternatives;
+      if (alternatives.length) {
+        state.speechResults = alternatives;
+        clearTimeout(state.speechTimer);
+        state.speechTimer = setTimeout(finishRecognition, state.speakKind === 'word' ? 1000 : 1400);
+      }
       if (result && result.isFinal) {
         evaluateSpeech(alternatives);
         try { recognition.stop(); } catch (_) {}
@@ -826,18 +996,24 @@
           if (session !== state.speechSession) return;
           if (phase === 'connecting') {
             $('#speech-title').textContent = '正在连接讯飞评测…';
+            setSpeechVisual('preparing');
           } else if (phase === 'recording') {
             state.speechPhase = 'listening';
             $('#speech-title').textContent = '正在听你朗读';
-            $('#speech-detail').textContent = '读完后点击“我读完了”。';
+            $('#speech-detail').textContent = '请开始朗读，停顿后会自动判断。';
             $('#speak-start').classList.add('listening');
-            $('#speak-start').textContent = '■ 我读完了';
+            $('#speak-start').textContent = '■ 提前结束';
+            setSpeechVisual('listening');
+          } else if (phase === 'voice-start') {
+            $('#speech-title').textContent = '听到你的声音了';
+            $('#speech-detail').textContent = '继续读，读完自然停顿即可。';
           } else if (phase === 'processing') {
             state.speechPhase = 'processing';
             $('#speech-title').textContent = '正在分析发音…';
             $('#speech-detail').textContent = '马上就能看到结果。';
             $('#speak-start').classList.remove('listening');
             $('#speak-start').textContent = '正在评分…';
+            setSpeechVisual('processing');
           }
         },
         onResult: result => {
@@ -852,7 +1028,8 @@
             return;
           }
           const quota = Number(error.code) === 11201 || Number(error.code) === 42306;
-          showSpeechResult(false, quota ? '今日评测额度已用完' : '讯飞评测没有完成', quota ? '明天可以继续使用免费额度。' : error.message || '请检查网络后再试一次。');
+          const noSpeech = error.code === 'NO_SPEECH';
+          showSpeechResult(false, quota ? '今日评测额度已用完' : noSpeech ? '还没有听到你的声音' : '讯飞评测没有完成', quota ? '明天可以继续使用免费额度。' : noSpeech ? '请在“正在听”出现后靠近麦克风朗读。' : error.message || '请检查网络后再试一次。');
         }
       });
       return true;
@@ -892,13 +1069,14 @@
     $('#speech-status').hidden = false;
     $('#speech-status').className = 'speech-status';
     $('#speech-title').textContent = '正在准备麦克风…';
-    $('#speech-detail').textContent = '约 1 秒后开始。';
+    $('#speech-detail').textContent = '准备好后请直接朗读。';
     $('#speech-heard').textContent = '';
     $('#speak-start').textContent = '准备开始…';
+    setSpeechVisual('preparing');
     setTimeout(async () => {
       if (await beginXfyunEvaluation(session)) return;
       startBrowserFallback(session);
-    }, 1000);
+    }, 80);
   }
 
   function replayClass(element, className, duration = 420) {
@@ -908,11 +1086,47 @@
     setTimeout(() => element.classList.remove(className), duration);
   }
 
+  function playArrangementSuccess({ container, pieces, feedback, audioText, next, rewardAmount, newlyAwarded }) {
+    state.interactionLocked = true;
+    replayClass(container, 'success-sweep', 850);
+    pieces.forEach((piece, index) => scheduleAnimation(() => {
+      piece.classList.remove('wrong-position');
+      piece.classList.add('correct-position');
+      piece.animate([
+        { transform: 'translateY(0) scale(1)' },
+        { transform: 'translateY(-10px) scale(1.08)', offset: .48 },
+        { transform: 'translateY(0) scale(1)' }
+      ], { duration: reduceMotion ? 1 : 360, easing: 'ease-out' });
+    }, 150 + index * 80));
+    const focusDelay = 210 + pieces.length * 80;
+    scheduleAnimation(() => {
+      pieces.forEach((piece, index) => {
+        const middle = (pieces.length - 1) / 2;
+        piece.animate([
+          { transform: 'translateX(0) scale(1)' },
+          { transform: `translateX(${(middle - index) * 4}px) scale(1.07)`, offset: .55 },
+          { transform: 'translateX(0) scale(1)' }
+        ], { duration: reduceMotion ? 1 : 400, easing: 'ease-out' });
+      });
+      playText(audioText);
+    }, focusDelay);
+    scheduleAnimation(() => {
+      replayClass(feedback, 'pop');
+      animateSparks(container);
+    }, focusDelay + 280);
+    if (newlyAwarded) scheduleAnimation(() => animateReward(container, rewardAmount), focusDelay + 660);
+    scheduleAnimation(() => {
+      next.hidden = false;
+      state.interactionLocked = false;
+    }, newlyAwarded ? focusDelay + 1880 : focusDelay + 650);
+  }
+
   function showWordError(message) {
     const feedback = $('#word-feedback');
     feedback.className = 'feedback bad';
     feedback.textContent = `❌ ${message}`;
     replayClass(feedback, 'pop');
+    feedback.classList.toggle('again', state.wordAttempts > 1);
     replayClass($('#slots'), 'wrong-attempt', 340);
   }
 
@@ -921,6 +1135,7 @@
     feedback.className = 'feedback bad';
     feedback.textContent = `❌ ${message}`;
     replayClass(feedback, 'pop');
+    feedback.classList.toggle('again', state.sentenceAttempts > 1);
     replayClass($('#sentence-slots'), 'wrong-attempt', 340);
   }
 
@@ -937,8 +1152,10 @@
         const correctCount = state.picked.filter((item, index) => item.letter === target[index]).length;
         showWordError(correctCount ? '绿色位置已经放对，点击橙色字母调整。' : '字母都选齐了，再调整一下顺序。');
       } else if (state.wordAttempts === 3) {
-        showWordError(`提示：这个单词以“${target[0].toUpperCase()}”开头。`);
-        playText(currentWord().text);
+        const wrongIndex = state.picked.findIndex((item, index) => item.letter !== target[index]);
+        const sound = spellingSound(currentWord(), wrongIndex, target[wrongIndex]);
+        showWordError(`听一听第 ${wrongIndex + 1} 个位置需要的字母音。`);
+        if (sound) playPhoneme(sound, null, target[wrongIndex]);
       } else {
         $('#word-hint').hidden = false;
         showWordError('还没拼对，可以看看提示。');
@@ -952,10 +1169,17 @@
     $('#word-reveal').hidden = false;
     $('#word-hint').hidden = true;
     $('#word-speak').hidden = false;
-    $('#word-next').hidden = false;
-    award('spell', state.word, 2);
+    const newlyAwarded = award('spell', state.word, 2);
     renderPicker();
-    playText(currentWord().text);
+    playArrangementSuccess({
+      container: $('#slots'),
+      pieces: $$('#slots .slot'),
+      feedback: $('#word-feedback'),
+      audioText: currentWord().text,
+      next: $('#word-next'),
+      rewardAmount: 2,
+      newlyAwarded
+    });
   }
 
   function evaluateSentenceArrangement() {
@@ -987,10 +1211,17 @@
     $('#sentence-meaning').textContent = currentSentence().meaning;
     $('#sentence-reveal').hidden = false;
     $('#sentence-hint').hidden = true;
-    $('#sentence-next').hidden = false;
-    award('sentence', state.sentence, 2);
+    const newlyAwarded = award('sentence', state.sentence, 2);
     renderPicker();
-    playText(currentSentence().text);
+    playArrangementSuccess({
+      container: $('#sentence-slots'),
+      pieces: $$('#sentence-slots .sentence-slot'),
+      feedback: $('#sentence-feedback'),
+      audioText: currentSentence().text,
+      next: $('#sentence-next'),
+      rewardAmount: 2,
+      newlyAwarded
+    });
   }
 
   function bindEvents() {
@@ -1004,7 +1235,7 @@
       state.voice = button.dataset.voice;
       saveState();
       updateSummary();
-      playText(state.mode === 'spell' ? currentWord().text : currentSentence().text);
+      playText(state.mode === 'spell' ? currentWord().text : state.mode === 'speak' ? currentSpeakItem().text : currentSentence().text);
     });
     $('#letters').addEventListener('mouseover', event => {
       const button = event.target.closest('[data-letter-id]');
@@ -1019,33 +1250,48 @@
         playPhoneme(sound, button, item.letter, () => {
           delete button.dataset.previewedAt;
           const feedback = $('#word-feedback');
+          if (feedback.classList.contains('good')) return;
           feedback.className = 'feedback phonics-feedback';
           feedback.textContent = '浏览器需要先点击一次字母开启声音。';
         });
       }
     });
-    $('#letters').addEventListener('click', event => {
+    $('#letters').addEventListener('click', async event => {
       const button = event.target.closest('[data-letter-id]');
       const position = state.picked.findIndex(picked => !picked);
-      if (!button || position < 0 || !$('#word-next').hidden) return;
+      if (!button || position < 0 || !$('#word-next').hidden || state.interactionLocked) return;
       const item = state.letterPool.find(letter => letter.id === Number(button.dataset.letterId));
       if (item) {
+        state.interactionLocked = true;
+        const from = button.getBoundingClientRect();
         state.picked[position] = item;
         const sound = spellingSound(currentWord(), position, item.letter);
         const justPreviewed = Date.now() - Number(button.dataset.previewedAt || 0) < 3000;
         if (sound && !justPreviewed) playPhoneme(sound, null, item.letter);
+        renderSlots();
+        const arrived = $('#slots').children[position];
+        await animateTransfer(item.letter, from, arrived.getBoundingClientRect());
+        arrived.classList.add('arrived');
+        state.interactionLocked = false;
       }
-      renderSlots();
       evaluateWordArrangement();
     });
-    $('#slots').addEventListener('click', event => {
+    $('#slots').addEventListener('click', async event => {
       const button = event.target.closest('[data-picked-letter]');
-      if (!button || button.disabled || !$('#word-next').hidden) return;
-      state.picked[Number(button.dataset.pickedLetter)] = null;
+      if (!button || button.disabled || !$('#word-next').hidden || state.interactionLocked) return;
+      state.interactionLocked = true;
+      const index = Number(button.dataset.pickedLetter);
+      const item = state.picked[index];
+      const from = button.getBoundingClientRect();
+      state.picked[index] = null;
       renderSlots();
+      const bank = $(`[data-letter-id="${item.id}"]`);
+      await animateTransfer(item.letter, from, bank?.getBoundingClientRect(), true);
+      bank?.animate([{ transform: 'scale(.85)' }, { transform: 'scale(1.12)', offset: .55 }, { transform: 'scale(1)' }], { duration: reduceMotion ? 1 : 250, easing: 'ease-out' });
+      state.interactionLocked = false;
     });
     $('#word-undo').addEventListener('click', () => {
-      if (!$('#word-next').hidden) return;
+      if (!$('#word-next').hidden || state.interactionLocked) return;
       for (let index = state.picked.length - 1; index >= 0; index -= 1) {
         if (!state.picked[index]) continue;
         state.picked[index] = null;
@@ -1067,20 +1313,36 @@
       setMode('speak');
     });
     $('#word-next').addEventListener('click', () => { state.word = (state.word + 1) % wordItems().length; renderWord(); });
-    $('#sentence-bank').addEventListener('click', event => {
+    $('#sentence-bank').addEventListener('click', async event => {
       const button = event.target.closest('[data-token-id]');
       const position = state.sentencePicked.findIndex(item => !item);
-      if (!button || position < 0 || !$('#sentence-next').hidden) return;
+      if (!button || position < 0 || !$('#sentence-next').hidden || state.interactionLocked) return;
       const item = state.sentencePool.find(token => token.id === Number(button.dataset.tokenId));
-      if (item) state.sentencePicked[position] = item;
-      renderSentence();
+      if (item) {
+        state.interactionLocked = true;
+        const from = button.getBoundingClientRect();
+        state.sentencePicked[position] = item;
+        renderSentence();
+        const arrived = $('#sentence-slots').children[position];
+        await animateTransfer(item.word, from, arrived.getBoundingClientRect());
+        arrived.classList.add('arrived');
+        state.interactionLocked = false;
+      }
       evaluateSentenceArrangement();
     });
-    $('#sentence-slots').addEventListener('click', event => {
+    $('#sentence-slots').addEventListener('click', async event => {
       const button = event.target.closest('[data-used-token]');
-      if (!button || button.disabled || !$('#sentence-next').hidden) return;
-      state.sentencePicked[Number(button.dataset.usedToken)] = null;
+      if (!button || button.disabled || !$('#sentence-next').hidden || state.interactionLocked) return;
+      state.interactionLocked = true;
+      const index = Number(button.dataset.usedToken);
+      const item = state.sentencePicked[index];
+      const from = button.getBoundingClientRect();
+      state.sentencePicked[index] = null;
       renderSentence();
+      const bank = $(`[data-token-id="${item.id}"]`);
+      await animateTransfer(item.word, from, bank?.getBoundingClientRect(), true);
+      bank?.animate([{ transform: 'scale(.86)' }, { transform: 'scale(1.1)', offset: .55 }, { transform: 'scale(1)' }], { duration: reduceMotion ? 1 : 250, easing: 'ease-out' });
+      state.interactionLocked = false;
     });
     $('#sentence-listen').addEventListener('click', () => playText(currentSentence().text));
     $('#sentence-reset').addEventListener('click', resetSentence);
@@ -1124,6 +1386,14 @@
       if (!button) return;
       openUnit(Number(button.dataset.unitIndex));
     });
+    $('#unit-grid').addEventListener('pointerover', event => {
+      const card = event.target.closest('.unit-node:not(.revision)');
+      if (card && !card.contains(event.relatedTarget)) playUnitScene(card);
+    });
+    $('#unit-grid').addEventListener('focusin', event => {
+      const card = event.target.closest('.unit-node:not(.revision)');
+      if (card) playUnitScene(card);
+    });
     $('#reward-grid').addEventListener('click', event => {
       const button = event.target.closest('[data-reward-id]');
       if (button) requestReward(button.dataset.rewardId);
@@ -1147,7 +1417,7 @@
     loadState();
     bindEvents();
     updateSummary();
-    renderMap();
+    renderMap(true);
     renderRewards();
     setMode('spell');
   }

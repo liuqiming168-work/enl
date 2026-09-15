@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#23384f">
   <title>刘劲英语 · 三年级上册</title>
   <link rel="icon" href="assets/openmoji/1F44B.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20260915-2">
 </head>
 <body>
   <div class="app-shell">
@@ -114,6 +114,13 @@
             <span class="kicker" id="speak-count"></span>
             <h2 id="speak-target"></h2>
             <p class="translation" id="speak-meaning"></p>
+            <div class="recording-visual" id="recording-visual" aria-hidden="true">
+              <span class="recording-ring ring-one"></span>
+              <span class="recording-ring ring-two"></span>
+              <span class="recording-core">🎤</span>
+              <span class="recording-check">✓</span>
+              <span class="recording-bars"><i></i><i></i><i></i><i></i><i></i></span>
+            </div>
             <div class="speak-actions">
               <button class="demo-button" id="speak-listen">🔊 听示范</button>
               <button class="record-button" id="speak-start">🎤 开始跟读</button>
@@ -172,7 +179,7 @@
   <script>
     window.XFYUN_AUTH_ENDPOINT = 'https://liujin-n-signer-wdrtkmmavm.cn-hangzhou.fcapp.run';
   </script>
-  <script src="xfyun-ise.js?v=20260912-2"></script>
-  <script src="app.js"></script>
+  <script src="xfyun-ise.js?v=20260915-2"></script>
+  <script src="app.js?v=20260915-2"></script>
 </body>
 </html>
