@@ -13,16 +13,18 @@
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const POINTS_RESET_VERSION = 1;
 
   const unitMeta = [
-    { id: 'Unit 1', title: 'Making friends', subtitle: '问候、介绍与友谊', icon: '1F44B', color: '#58c58a', parts: ['Part A', 'Part B', 'Part C'] },
-    { id: 'Unit 2', title: 'Different families', subtitle: '家庭成员与不同的家庭', icon: '1F91D', color: '#65c7db', parts: ['Part A', 'Part B', 'Part C'] },
-    { id: 'Unit 3', title: 'Amazing animals', subtitle: '宠物、野生动物与特征', icon: '1F415', color: '#f4c64f', parts: ['Part A', 'Part B', 'Part C'] },
-    { id: 'Unit 4', title: 'Plants around us', subtitle: '水果、植物与爱护花园', icon: '1F34E', color: '#7779df', parts: ['Part A', 'Part B', 'Part C'] },
-    { id: 'Unit 5', title: 'The colourful world', subtitle: '颜色、标识与多彩自然', icon: '1F60A', color: '#e575a8', parts: ['Part A', 'Part B', 'Part C'] },
-    { id: 'Unit 6', title: 'Useful numbers', subtitle: '数字、年龄与生日', icon: '2B50', color: '#58c58a', parts: ['Part A', 'Part B', 'Part C'] },
-    { id: 'Revision', title: 'Being a good guest', subtitle: '全册综合复习与礼貌做客', icon: '1F9E9', color: '#f16f5c', parts: ['听力', '拼写', '跟读'], revision: true }
+    { id: 'Unit 1', title: 'Making friends', subtitle: '问候、介绍与友谊', icon: '1F44B', color: '#dcefe4', parts: ['Part A', 'Part B', 'Part C'] },
+    { id: 'Unit 2', title: 'Different families', subtitle: '家庭成员与不同的家庭', icon: '1F91D', color: '#dcebf2', parts: ['Part A', 'Part B', 'Part C'] },
+    { id: 'Unit 3', title: 'Amazing animals', subtitle: '宠物、野生动物与特征', icon: '1F415', color: '#f5ebc9', parts: ['Part A', 'Part B', 'Part C'] },
+    { id: 'Unit 4', title: 'Plants around us', subtitle: '水果、植物与爱护花园', icon: '1F34E', color: '#e3e2f2', parts: ['Part A', 'Part B', 'Part C'] },
+    { id: 'Unit 5', title: 'The colourful world', subtitle: '颜色、标识与多彩自然', icon: '1F60A', color: '#f2dfe7', parts: ['Part A', 'Part B', 'Part C'] },
+    { id: 'Unit 6', title: 'Useful numbers', subtitle: '数字、年龄与生日', icon: '2B50', color: '#dcece8', parts: ['Part A', 'Part B', 'Part C'] },
+    { id: 'Revision', title: 'Being a good guest', subtitle: '全册综合复习与礼貌做客', icon: '1F9E9', color: '#f2dfdb', parts: ['听力', '拼写', '跟读'], revision: true }
   ];
+  const quizUnitNames = ['朋友', '家庭', '动物', '植物', '颜色', '数字', '复习'];
 
   const rewards = [
     { id: 'tv', title: '看电视', detail: '30 分钟', cost: 120, image: 'home-cinema.svg' },
@@ -84,8 +86,9 @@
     sentencePool: [],
     pickerPage: 0,
     voice: 'sarah',
-    points: 340,
+    points: 0,
     completed: {},
+    quizResults: {},
     pending: [],
     todayDate: dayKey(),
     todayCount: 0,
@@ -100,7 +103,18 @@
     speechStartedAt: 0,
     speechRetryCount: 0,
     interactionLocked: false,
-    animationTimers: []
+    animationTimers: [],
+    quiz: {
+      allQuestions: [],
+      queue: [],
+      position: 0,
+      responses: {},
+      picked: [],
+      pool: [],
+      speechActive: false,
+      locked: false,
+      session: 0
+    }
   };
 
   function dayKey() {
@@ -113,9 +127,14 @@
       const saved = JSON.parse(localStorage.getItem('liujin-english-formal') || '{}');
       if (Number.isInteger(saved.unit)) state.unit = Math.max(0, Math.min(unitMeta.length - 1, saved.unit));
       if (saved.voice && audioPacks[saved.voice]) state.voice = saved.voice;
-      if (Number.isFinite(saved.points)) state.points = Math.max(0, saved.points);
+      if (saved.pointsResetVersion === POINTS_RESET_VERSION && Number.isFinite(saved.points)) {
+        state.points = Math.max(0, saved.points);
+      }
       if (saved.completed && typeof saved.completed === 'object') state.completed = saved.completed;
-      if (Array.isArray(saved.pending)) state.pending = saved.pending.filter(item => item && item.status === 'pending');
+      if (saved.quizResults && typeof saved.quizResults === 'object') state.quizResults = saved.quizResults;
+      if (saved.pointsResetVersion === POINTS_RESET_VERSION && Array.isArray(saved.pending)) {
+        state.pending = saved.pending.filter(item => item && item.status === 'pending');
+      }
       if (saved.todayDate === dayKey()) {
         state.todayDate = saved.todayDate;
         state.todayCount = Number(saved.todayCount) || 0;
@@ -133,8 +152,10 @@
       localStorage.setItem('liujin-english-formal', JSON.stringify({
         unit: state.unit,
         voice: state.voice,
+        pointsResetVersion: POINTS_RESET_VERSION,
         points: state.points,
         completed: state.completed,
+        quizResults: state.quizResults,
         pending: state.pending,
         todayDate: state.todayDate,
         todayCount: state.todayCount
@@ -591,17 +612,367 @@
     renderPicker();
   }
 
+  function quizWords(unitIndex = state.unit) {
+    const content = contentFor(unitIndex);
+    return [
+      ...content.words.map((item, index) => ({ text: item[0], meaning: item[1], kind: 'word', sourceIndex: index })),
+      ...content.people.map((item, index) => ({ text: item[0], meaning: item[1], kind: 'person', sourceIndex: index }))
+    ];
+  }
+
+  function quizSentences(unitIndex = state.unit) {
+    return contentFor(unitIndex).sentences.map((item, index) => ({ text: item[0], meaning: item[1], sourceIndex: index }));
+  }
+
+  function quizChoices(items, target, count = 3) {
+    const alternatives = shuffle(items.filter(item => item.text !== target.text)).slice(0, Math.max(0, count - 1));
+    return shuffle([target, ...alternatives]);
+  }
+
+  function buildQuizQuestions() {
+    const words = quizWords();
+    const sentences = quizSentences();
+    const pickedWords = shuffle(words).slice(0, 6);
+    const pickedSentences = shuffle(sentences).slice(0, 4);
+    const idFor = (type, item) => `${type}-${item.kind || 'sentence'}-${item.sourceIndex}`;
+    return shuffle([
+      { id: idFor('listen', pickedWords[0]), type: 'listen', category: 'vocabulary', item: pickedWords[0], choices: quizChoices(words, pickedWords[0]) },
+      { id: idFor('listen', pickedWords[1]), type: 'listen', category: 'vocabulary', item: pickedWords[1], choices: quizChoices(words, pickedWords[1]) },
+      { id: idFor('spell', pickedWords[2]), type: 'spell', category: 'vocabulary', item: pickedWords[2] },
+      { id: idFor('spell', pickedWords[3]), type: 'spell', category: 'vocabulary', item: pickedWords[3] },
+      { id: idFor('spell', pickedWords[4]), type: 'spell', category: 'vocabulary', item: pickedWords[4] },
+      { id: idFor('speak-word', pickedWords[5]), type: 'speak-word', category: 'pronunciation', item: pickedWords[5] },
+      { id: idFor('sentence', pickedSentences[0]), type: 'sentence', category: 'sentence', item: pickedSentences[0] },
+      { id: idFor('sentence', pickedSentences[1]), type: 'sentence', category: 'sentence', item: pickedSentences[1] },
+      { id: idFor('context', pickedSentences[2]), type: 'context', category: 'sentence', item: pickedSentences[2], choices: quizChoices(sentences, pickedSentences[2]) },
+      { id: idFor('speak-sentence', pickedSentences[3]), type: 'speak-sentence', category: 'pronunciation', item: pickedSentences[3] }
+    ]);
+  }
+
+  function quizQuestion() {
+    return state.quiz.queue[state.quiz.position];
+  }
+
+  function renderQuizIntro() {
+    clearPracticeAnimations();
+    stopQuizSpeech();
+    $('#quiz-intro').hidden = false;
+    $('#quiz-run').hidden = true;
+    $('#quiz-result').hidden = true;
+    $('#quiz-unit-label').textContent = `${unitMeta[state.unit].id} · ${unitMeta[state.unit].title}`;
+    const result = state.quizResults[state.unit];
+    $('#quiz-last-result').hidden = !result;
+    if (result) $('#quiz-last-result').textContent = `历史最高 ${result.score} 分 · ${result.passed ? '已通过' : '继续加油'}${result.skipped ? ` · ${result.skipped} 道发音题未评测` : ''}`;
+    $('#quiz-start').textContent = result ? '再测一次' : '开始测试';
+  }
+
+  function startQuiz(retryWrong = false) {
+    clearPracticeAnimations();
+    stopQuizSpeech();
+    if (!retryWrong || !state.quiz.allQuestions.length) {
+      state.quiz.allQuestions = buildQuizQuestions();
+      state.quiz.responses = {};
+      state.quiz.queue = [...state.quiz.allQuestions];
+    } else {
+      state.quiz.queue = state.quiz.allQuestions.filter(question => {
+        const response = state.quiz.responses[question.id];
+        return response && response.points !== null && response.points < 10;
+      });
+    }
+    state.quiz.position = 0;
+    $('#quiz-intro').hidden = true;
+    $('#quiz-result').hidden = true;
+    $('#quiz-run').hidden = false;
+    renderQuizQuestion();
+  }
+
+  function setQuizFeedback(type, message) {
+    const feedback = $('#quiz-feedback');
+    feedback.className = `quiz-feedback show ${type}`;
+    feedback.textContent = `${type === 'good' ? '✓' : '✕'} ${message}`;
+  }
+
+  function resetQuizQuestionUI() {
+    state.quiz.picked = [];
+    state.quiz.pool = [];
+    state.quiz.locked = false;
+    $('#quiz-feedback').className = 'quiz-feedback';
+    $('#quiz-feedback').textContent = '';
+    $('#quiz-skip').hidden = true;
+    $('#quiz-listen').hidden = true;
+  }
+
+  function quizTypeLabel(type) {
+    return {
+      listen: '听音选图', spell: '看图拼词', sentence: '听音组句', context: '情境理解',
+      'speak-word': '单词跟读', 'speak-sentence': '短句跟读'
+    }[type] || '单元测试';
+  }
+
+  function renderQuizQuestion() {
+    clearPracticeAnimations();
+    const question = quizQuestion();
+    if (!question) { finishQuiz(); return; }
+    resetQuizQuestionUI();
+    const total = state.quiz.queue.length;
+    $('#quiz-progress-label').textContent = `第 ${state.quiz.position + 1} / ${total} 题`;
+    $('#quiz-progress-bar').style.width = `${(state.quiz.position + 1) / total * 100}%`;
+    $('#quiz-type').textContent = quizTypeLabel(question.type);
+    const questionBox = $('#quiz-question');
+
+    if (question.type === 'listen') {
+      $('#quiz-prompt').textContent = '听一听，选出对应的图片';
+      $('#quiz-subprompt').textContent = '可以重复播放，不显示英文提示。';
+      $('#quiz-listen').hidden = false;
+      questionBox.innerHTML = `<div class="quiz-choice-grid">${question.choices.map(choice => `<button class="quiz-choice" data-quiz-choice="${choice.text.replace(/"/g, '&quot;')}">${visualMarkup(choice)}<span class="quiz-choice-meaning">${choice.meaning}</span></button>`).join('')}</div>`;
+      scheduleAnimation(() => playText(question.item.text), 180);
+      return;
+    }
+
+    if (question.type === 'context') {
+      $('#quiz-prompt').textContent = '听短句，选择正确的意思';
+      $('#quiz-subprompt').textContent = '先理解完整情境，再选择答案。';
+      $('#quiz-listen').hidden = false;
+      questionBox.innerHTML = `<div class="quiz-choice-grid">${question.choices.map(choice => `<button class="quiz-choice text-choice" data-quiz-choice="${choice.text.replace(/"/g, '&quot;')}">${choice.meaning}</button>`).join('')}</div>`;
+      scheduleAnimation(() => playText(question.item.text), 180);
+      return;
+    }
+
+    if (question.type === 'spell') {
+      $('#quiz-prompt').textContent = '看图，把单词拼完整';
+      $('#quiz-subprompt').textContent = '测试中不提供字母读音提示。';
+      const answer = cleanLetters(question.item.text);
+      const extras = shuffle('abcdefghijklmnopqrstuvwxyz'.split('').filter(letter => !answer.includes(letter))).slice(0, answer.length > 8 ? 3 : 2);
+      state.quiz.picked = Array(answer.length).fill(null);
+      state.quiz.pool = shuffle([...answer, ...extras]).map((letter, id) => ({ letter, id }));
+      questionBox.innerHTML = `<div class="quiz-spell-picture">${visualMarkup(question.item)}</div><span class="quiz-spell-meaning">${question.item.meaning}</span><div class="quiz-slots" id="quiz-slots"></div><div class="quiz-bank" id="quiz-bank"></div>`;
+      renderQuizArrangement();
+      return;
+    }
+
+    if (question.type === 'sentence') {
+      $('#quiz-prompt').textContent = '听短句，按顺序组装句子';
+      $('#quiz-subprompt').textContent = '页面不会提前显示英文答案。';
+      $('#quiz-listen').hidden = false;
+      const tokens = question.item.text.split(/\s+/).filter(Boolean);
+      state.quiz.picked = Array(tokens.length).fill(null);
+      state.quiz.pool = shuffle(tokens.map((token, id) => ({ letter: token, id })));
+      if (state.quiz.pool.map(item => item.letter).join(' ') === question.item.text) state.quiz.pool.reverse();
+      questionBox.innerHTML = '<div class="quiz-slots" id="quiz-slots"></div><div class="quiz-bank" id="quiz-bank"></div>';
+      renderQuizArrangement();
+      scheduleAnimation(() => playText(question.item.text), 180);
+      return;
+    }
+
+    const sentenceMode = question.type === 'speak-sentence';
+    $('#quiz-prompt').textContent = sentenceMode ? '听示范，再读完整短句' : '听示范，再读这个单词';
+    $('#quiz-subprompt').textContent = '停顿后会自动评分；网络异常可以跳过。';
+    $('#quiz-listen').hidden = false;
+    questionBox.innerHTML = `<div class="quiz-speech-card"><strong>${question.item.text}</strong><span>${question.item.meaning}</span><div class="quiz-speech-mic" id="quiz-speech-mic">🎤</div><button class="quiz-record" id="quiz-record">开始跟读</button></div>`;
+  }
+
+  function quizTargetValues(question = quizQuestion()) {
+    if (question.type === 'spell') return cleanLetters(question.item.text).split('');
+    return question.item.text.split(/\s+/).filter(Boolean);
+  }
+
+  function renderQuizArrangement(resultState = '') {
+    const question = quizQuestion();
+    const target = quizTargetValues(question);
+    $('#quiz-slots').innerHTML = target.map((value, index) => {
+      const picked = state.quiz.picked[index];
+      if (!picked) return '<span class="quiz-slot"></span>';
+      const resultClass = resultState ? ` ${resultState}` : '';
+      return `<button class="quiz-slot${resultClass}" data-quiz-picked="${index}" ${state.quiz.locked ? 'disabled' : ''}>${picked.letter}</button>`;
+    }).join('');
+    $('#quiz-bank').innerHTML = state.quiz.pool.map(item => `<button data-quiz-bank="${item.id}" ${state.quiz.picked.some(picked => picked?.id === item.id) ? 'disabled' : ''}>${item.letter}</button>`).join('');
+  }
+
+  function quizResponse(points, status = 'answered') {
+    const question = quizQuestion();
+    state.quiz.responses[question.id] = { points, status, category: question.category };
+  }
+
+  function completeQuizQuestion(correct, message = '') {
+    if (state.quiz.locked) return;
+    state.quiz.locked = true;
+    quizResponse(correct ? 10 : 0);
+    setQuizFeedback(correct ? 'good' : 'bad', message || (correct ? '答对了！' : '答错了，继续下一题。'));
+    $$('#quiz-question button').forEach(button => { button.disabled = true; });
+    scheduleAnimation(nextQuizQuestion, 800);
+  }
+
+  function evaluateQuizArrangement() {
+    const question = quizQuestion();
+    if (state.quiz.locked || !state.quiz.picked.length || !state.quiz.picked.every(Boolean)) return;
+    const target = quizTargetValues(question);
+    const correct = state.quiz.picked.every((item, index) => item.letter === target[index]);
+    state.quiz.locked = true;
+    renderQuizArrangement(correct ? 'correct' : 'wrong');
+    state.quiz.locked = false;
+    completeQuizQuestion(correct);
+  }
+
+  function answerQuizChoice(button) {
+    if (state.quiz.locked) return;
+    const question = quizQuestion();
+    const correct = button.dataset.quizChoice === question.item.text;
+    button.classList.add(correct ? 'correct' : 'wrong');
+    completeQuizQuestion(correct);
+  }
+
+  function nextQuizQuestion() {
+    stopQuizSpeech();
+    state.quiz.position += 1;
+    renderQuizQuestion();
+  }
+
+  function quizCategoryScore(category) {
+    const questions = state.quiz.allQuestions.filter(question => question.category === category);
+    const responses = questions.map(question => state.quiz.responses[question.id]).filter(response => response && response.points !== null);
+    if (!responses.length) return null;
+    return Math.round(responses.reduce((sum, response) => sum + response.points, 0) / (responses.length * 10) * 100);
+  }
+
+  function finishQuiz() {
+    stopQuizSpeech();
+    const responses = state.quiz.allQuestions.map(question => state.quiz.responses[question.id]).filter(Boolean);
+    const scored = responses.filter(response => response.points !== null);
+    const score = scored.length ? Math.round(scored.reduce((sum, response) => sum + response.points, 0) / (scored.length * 10) * 100) : 0;
+    const skipped = responses.filter(response => response.points === null).length;
+    const passed = score >= 80;
+    const previous = state.quizResults[state.unit];
+    const improvesAssessment = previous && score === previous.score && skipped < (previous.skipped ?? Infinity);
+    if (!previous || score > previous.score || improvesAssessment) {
+      state.quizResults[state.unit] = { score, passed, skipped, completedAt: Date.now() };
+    } else if (passed && !previous.passed) {
+      state.quizResults[state.unit] = { ...previous, passed: true };
+    }
+    let reward = 0;
+    if (passed && award('quiz-pass', 0, 20)) reward += 20;
+    if (score === 100 && skipped === 0 && award('quiz-perfect', 0, 10)) reward += 10;
+    saveState();
+    renderMap(false);
+
+    $('#quiz-run').hidden = true;
+    $('#quiz-result').hidden = false;
+    $('#quiz-result-mark').textContent = passed ? '✓' : '!';
+    $('#quiz-result-mark').className = `quiz-result-mark${passed ? '' : ' retry'}`;
+    $('#quiz-result-title').textContent = passed ? '挑战通过！' : '再练一练就能通过';
+    $('#quiz-score').textContent = `${score} 分`;
+    $('#quiz-result-note').textContent = `${skipped ? `${skipped} 道发音题因网络未计分。` : ''}${reward ? `首次达成，获得 ${reward} 积分。` : passed ? '这个单元已经通过，重复测试不会重复奖励。' : '达到 80 分即可通过，只需要重做薄弱题。'}`;
+    const dimensions = [
+      ['词汇', quizCategoryScore('vocabulary')],
+      ['句型', quizCategoryScore('sentence')],
+      ['发音', quizCategoryScore('pronunciation')]
+    ];
+    $('#quiz-dimensions').innerHTML = dimensions.map(([label, value]) => `<div class="quiz-dimension"><b>${value === null ? '--' : `${value}%`}</b><span>${label}</span></div>`).join('');
+    const wrong = state.quiz.allQuestions.filter(question => {
+      const response = state.quiz.responses[question.id];
+      return response && response.points !== null && response.points < 10;
+    });
+    $('#quiz-retry').hidden = wrong.length === 0;
+  }
+
+  function stopQuizSpeech() {
+    state.quiz.session += 1;
+    state.quiz.speechActive = false;
+    if (xfyunISE) xfyunISE.cancel();
+  }
+
+  async function startQuizSpeech() {
+    const question = quizQuestion();
+    const recordButton = $('#quiz-record');
+    if (!question || !recordButton) return;
+    if (state.quiz.speechActive) {
+      if (xfyunISE) xfyunISE.stop();
+      return;
+    }
+    if (!window.isSecureContext || !xfyunISE) {
+      setQuizFeedback('bad', '当前环境无法启动发音评测，可以跳过本题。');
+      $('#quiz-skip').hidden = false;
+      return;
+    }
+    stopRecognition(true);
+    if (state.audio) { state.audio.pause(); state.audio = null; }
+    const session = ++state.quiz.session;
+    state.quiz.speechActive = true;
+    recordButton.textContent = '正在准备…';
+    $('#quiz-speech-mic').classList.remove('listening');
+    try {
+      await xfyunISE.start({
+        text: question.item.text,
+        category: question.type === 'speak-word' ? 'read_word' : 'read_sentence',
+        onState: phase => {
+          if (session !== state.quiz.session) return;
+          if (phase === 'recording' || phase === 'voice-start') {
+            recordButton.textContent = '■ 提前结束';
+            $('#quiz-speech-mic').classList.add('listening');
+            if (phase === 'voice-start') setQuizFeedback('good', '听到你的声音了，读完自然停顿即可。');
+          } else if (phase === 'processing') {
+            recordButton.textContent = '正在评分…';
+            recordButton.disabled = true;
+            $('#quiz-speech-mic').classList.remove('listening');
+          }
+        },
+        onResult: result => {
+          if (session !== state.quiz.session) return;
+          state.quiz.speechActive = false;
+          const score = result.total ?? result.accuracy ?? 0;
+          recordButton.disabled = true;
+          recordButton.textContent = '评分完成';
+          if (score >= 65) {
+            completeQuizQuestion(true, `发音评测 ${score} 分，通过！`);
+          } else {
+            completeQuizQuestion(false, `发音评测 ${score} 分，未通过。`);
+          }
+        },
+        onError: error => {
+          if (session !== state.quiz.session) return;
+          state.quiz.speechActive = false;
+          recordButton.disabled = false;
+          recordButton.textContent = '重新跟读';
+          $('#quiz-speech-mic').classList.remove('listening');
+          setQuizFeedback('bad', error.code === 'NO_SPEECH' ? '还没有听到声音，请靠近麦克风再试。' : '发音服务暂时不可用，可以跳过本题。');
+          if (error.code !== 'NO_SPEECH') $('#quiz-skip').hidden = false;
+        }
+      });
+    } catch (error) {
+      state.quiz.speechActive = false;
+      recordButton.textContent = '重新跟读';
+      setQuizFeedback('bad', '发音服务暂时不可用，可以跳过本题。');
+      $('#quiz-skip').hidden = false;
+    }
+  }
+
+  function skipQuizSpeech() {
+    stopQuizSpeech();
+    if (state.quiz.locked) return;
+    state.quiz.locked = true;
+    quizResponse(null, 'skipped');
+    setQuizFeedback('good', '本题因网络原因跳过，不计入分数。');
+    $('#quiz-skip').hidden = true;
+    scheduleAnimation(nextQuizQuestion, 800);
+  }
+
   function setMode(mode) {
     stopRecognition(true);
+    if (mode !== 'quiz') {
+      clearPracticeAnimations();
+      stopQuizSpeech();
+    }
     state.mode = mode;
     state.pickerPage = 0;
     $$('.mode').forEach(button => button.classList.toggle('active', button.dataset.mode === mode));
     $('#spell-work').hidden = mode !== 'spell';
     $('#sentence-work').hidden = mode !== 'sentence';
     $('#speak-work').hidden = mode !== 'speak';
+    $('#quiz-work').hidden = mode !== 'quiz';
+    $('#learning-stage').classList.toggle('quiz-mode', mode === 'quiz');
     if (mode === 'spell') renderWord();
     if (mode === 'sentence') resetSentence();
     if (mode === 'speak') renderSpeak();
+    if (mode === 'quiz') renderQuizIntro();
   }
 
   function pickerItems() {
@@ -645,6 +1016,7 @@
     if (index === 2) return `<div class="unit-scene animal-scene" data-scene="animals">${ground}<span class="pond"></span><img class="scene-tree motion-tree" src="assets/openmoji/1F333.svg" alt=""><img class="bird motion-bird" src="assets/openmoji/1F426.svg" alt=""><img class="rabbit motion-rabbit" src="assets/openmoji/1F407.svg" alt=""><img class="fish motion-fish" src="assets/openmoji/1F41F.svg" alt=""></div>`;
     if (index === 3) return `<div class="unit-scene farm-scene" data-scene="farm">${ground}<span class="field"></span>${sun}<img class="barn" src="assets/openmoji/1F3E0.svg" alt=""><img class="sprout one motion-sprout" src="assets/openmoji/1F331.svg" alt=""><img class="sprout two motion-sprout" src="assets/openmoji/1F331.svg" alt=""><img class="sprout three motion-sprout" src="assets/openmoji/1F331.svg" alt=""><img class="tractor motion-tractor" src="assets/openmoji/1F69C.svg" alt=""></div>`;
     if (index === 4) return `<div class="unit-scene colour-scene" data-scene="colours">${ground}<img class="rainbow motion-rainbow" src="assets/openmoji/1F308.svg" alt=""><img class="palette motion-palette" src="assets/openmoji/1F3A8.svg" alt=""><img class="flower motion-flower" src="assets/openmoji/1F33C.svg" alt=""></div>`;
+    if (index === 6) return `<div class="unit-scene revision-focus-scene" data-scene="revision">${ground}<img class="motion-puzzle puzzle-main" src="assets/openmoji/1F9E9.svg" alt=""><img class="motion-star star-one" src="assets/openmoji/2B50.svg" alt=""><img class="motion-star star-two" src="assets/openmoji/2B50.svg" alt=""></div>`;
     return `<div class="unit-scene number-scene" data-scene="numbers">${ground}<span class="number-pop n1">1</span><span class="number-pop n2">2</span><span class="number-pop n3">3</span><img class="cake motion-cake" src="assets/openmoji/1F382.svg" alt=""><img class="party motion-party" src="assets/openmoji/1F389.svg" alt=""></div>`;
   }
 
@@ -682,26 +1054,38 @@
       scene.querySelectorAll('.number-pop').forEach((number, index) => animateSceneElement(number, [{ opacity: 0, transform: 'translateY(14px) scale(.5)' }, { opacity: 1, transform: 'translateY(-5px) scale(1.13)', offset: .68 }, { opacity: 1, transform: 'translateY(0) scale(1)' }], { duration: 720, delay: delay + index * 170, easing: 'ease-out' }));
       animateSceneElement(scene.querySelector('.motion-cake'), [{ transform: 'translateX(-50%) scale(.6)', opacity: 0 }, { transform: 'translateX(-50%) scale(1.1)', opacity: 1, offset: .72 }, { transform: 'translateX(-50%) scale(1)', opacity: 1 }], { duration: 950, delay: delay + 330, easing: 'ease-out' });
       animateSceneElement(scene.querySelector('.motion-party'), [{ opacity: 0, transform: 'scale(.4) rotate(-24deg)' }, { opacity: 1, transform: 'scale(1.2) rotate(8deg)', offset: .68 }, { opacity: 1, transform: 'scale(1)' }], { duration: 820, delay: delay + 650, easing: 'ease-out' });
+    } else if (kind === 'revision') {
+      animateSceneElement(scene.querySelector('.motion-puzzle'), [{ opacity: 0, transform: 'translate(-50%,18px) scale(.55) rotate(-10deg)' }, { opacity: 1, transform: 'translate(-50%,-5px) scale(1.12) rotate(4deg)', offset: .68 }, { opacity: 1, transform: 'translate(-50%,0) scale(1) rotate(0)' }], { duration: 1050, delay, easing: 'ease-out' });
+      scene.querySelectorAll('.motion-star').forEach((star, index) => animateSceneElement(star, [{ opacity: 0, transform: 'scale(.25) rotate(-30deg)' }, { opacity: 1, transform: 'scale(1.2) rotate(8deg)', offset: .7 }, { opacity: 1, transform: 'scale(1)' }], { duration: 760, delay: delay + 380 + index * 170, easing: 'ease-out' }));
     }
+  }
+
+  function unitMicroMarkup(index) {
+    if (index === 0) return '<span class="unit-micro-scene micro-greeting"><img class="micro-hand" src="assets/openmoji/1F44B.svg" alt=""><img class="micro-speech" src="assets/openmoji/1F4AC.svg" alt=""></span>';
+    if (index === 1) return '<span class="unit-micro-scene micro-family"><img class="micro-person-a" src="assets/openmoji/1F468.svg" alt=""><img class="micro-person-b" src="assets/openmoji/1F469.svg" alt=""><img class="micro-heart" src="assets/openmoji/2764.svg" alt=""></span>';
+    if (index === 2) return '<span class="unit-micro-scene micro-animals"><img class="micro-rabbit" src="assets/openmoji/1F407.svg" alt=""><img class="micro-bird" src="assets/openmoji/1F426.svg" alt=""></span>';
+    if (index === 3) return '<span class="unit-micro-scene micro-plants"><img class="micro-sprout" src="assets/openmoji/1F331.svg" alt=""><img class="micro-drop" src="assets/openmoji/1F4A7.svg" alt=""><img class="micro-sun" src="assets/openmoji/2600.svg" alt=""></span>';
+    if (index === 4) return '<span class="unit-micro-scene micro-colours"><img class="micro-rainbow" src="assets/openmoji/1F308.svg" alt=""><img class="micro-palette" src="assets/openmoji/1F3A8.svg" alt=""></span>';
+    if (index === 5) return '<span class="unit-micro-scene micro-numbers"><i>1</i><i>2</i><i>3</i><img class="micro-star" src="assets/openmoji/2B50.svg" alt=""></span>';
+    return '<span class="unit-micro-scene micro-revision"><img class="micro-puzzle" src="assets/openmoji/1F9E9.svg" alt=""><img class="micro-revision-star" src="assets/openmoji/2B50.svg" alt=""></span>';
   }
 
   function renderMap(playIntro = false) {
     $('#unit-grid').innerHTML = unitMeta.map((meta, index) => {
-      const content = contentFor(index);
       const progress = unitProgress(index);
-      if (meta.revision) return `<button class="unit-node revision ${state.unit === index ? 'active' : ''}" data-unit-index="${index}" style="--unit-color:${meta.color}" title="进入 ${meta.id}"><img src="assets/openmoji/${meta.icon}.svg" alt=""><span class="unit-number">${meta.id.toUpperCase()}</span><strong>${meta.title}</strong><small>${meta.subtitle} · ${progress ? `${progress}%` : '未开始'}</small><span class="parts">${meta.parts.map(part => `<span>${part}</span>`).join('')}</span><span class="unit-progress"><i style="width:${progress}%"></i></span><small>${content.words.length + content.people.length} 个词汇 · ${content.sentences.length} 个句型</small></button>`;
-      return `<button class="unit-node ${state.unit === index ? 'active' : ''}" data-unit-index="${index}" style="--unit-color:${meta.color}" title="进入 ${meta.id}">
-        ${unitSceneMarkup(index)}<span class="unit-copy">
-        <span class="unit-number">${meta.id.toUpperCase()}</span>
-        <strong>${meta.title}</strong>
-        <small>${meta.subtitle} · ${progress ? `${progress}%` : '未开始'}</small>
-        <span class="parts">${meta.parts.map(part => `<span>${part}</span>`).join('')}</span>
-        <span class="unit-progress"><i style="width:${progress}%"></i></span>
-        <small>${content.words.length + content.people.length} 个词汇 · ${content.sentences.length} 个句型</small>
-        </span>
-      </button>`;
+      const quizResult = state.quizResults[index];
+      const status = quizResult?.passed ? '✓' : progress >= 100 ? '✓' : quizResult ? quizResult.score : '';
+      const label = meta.revision ? '复习' : `U${index + 1}`;
+      return `<button class="unit-node${state.unit === index ? ' active' : ''}" data-unit-index="${index}" style="--unit-color:${meta.color}" aria-pressed="${state.unit === index}" title="${meta.id} ${meta.title}">${status !== '' ? `<em class="unit-node-status">${status}</em>` : ''}<span class="unit-node-focus"><span class="unit-node-icon">${unitMicroMarkup(index)}</span></span><b>${label}</b><small>${quizUnitNames[index]}</small></button>`;
     }).join('');
-    if (playIntro) $$('.unit-node:not(.revision)').forEach((card, index) => playUnitScene(card, index * 170));
+
+    const meta = unitMeta[state.unit];
+    const content = contentFor();
+    const progress = unitProgress(state.unit);
+    const quizResult = state.quizResults[state.unit];
+    const currentText = `当前 · ${meta.id} ${quizUnitNames[state.unit]} · ${content.words.length + content.people.length} 词 · ${content.sentences.length} 句 · ${progress}%${quizResult ? ` · 测试 ${quizResult.score}` : ''}`;
+    $('#unit-route-current').textContent = currentText;
+    $('#unit-route-current').title = currentText;
   }
 
   function firstIncomplete(mode) {
@@ -710,7 +1094,7 @@
     return index === undefined ? 0 : index;
   }
 
-  function openUnit(unitIndex) {
+  function openUnit(unitIndex, scrollToPractice = true) {
     state.unit = unitIndex;
     state.word = firstIncomplete('spell');
     state.sentence = firstIncomplete(state.mode === 'speak' ? 'speak' : 'sentence');
@@ -718,7 +1102,7 @@
     updateSummary();
     renderMap();
     setMode(state.mode);
-    $('#learning-stage').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (scrollToPractice) $('#learning-stage').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function renderRewards() {
@@ -1235,8 +1619,40 @@
       state.voice = button.dataset.voice;
       saveState();
       updateSummary();
-      playText(state.mode === 'spell' ? currentWord().text : state.mode === 'speak' ? currentSpeakItem().text : currentSentence().text);
+      const quizItem = state.mode === 'quiz' ? quizQuestion()?.item : null;
+      playText(quizItem?.text || (state.mode === 'spell' ? currentWord().text : state.mode === 'speak' ? currentSpeakItem().text : currentSentence().text));
     });
+    $('#quiz-start').addEventListener('click', () => startQuiz(false));
+    $('#quiz-listen').addEventListener('click', () => {
+      const question = quizQuestion();
+      if (question) playText(question.item.text);
+    });
+    $('#quiz-question').addEventListener('click', event => {
+      const choice = event.target.closest('[data-quiz-choice]');
+      if (choice) { answerQuizChoice(choice); return; }
+      const bankButton = event.target.closest('[data-quiz-bank]');
+      if (bankButton && !state.quiz.locked) {
+        const position = state.quiz.picked.findIndex(item => !item);
+        const item = state.quiz.pool.find(candidate => candidate.id === Number(bankButton.dataset.quizBank));
+        if (position >= 0 && item) {
+          state.quiz.picked[position] = item;
+          renderQuizArrangement();
+          evaluateQuizArrangement();
+        }
+        return;
+      }
+      const pickedButton = event.target.closest('[data-quiz-picked]');
+      if (pickedButton && !state.quiz.locked) {
+        state.quiz.picked[Number(pickedButton.dataset.quizPicked)] = null;
+        renderQuizArrangement();
+        return;
+      }
+      if (event.target.closest('#quiz-record')) startQuizSpeech();
+    });
+    $('#quiz-skip').addEventListener('click', skipQuizSpeech);
+    $('#quiz-exit').addEventListener('click', renderQuizIntro);
+    $('#quiz-retry').addEventListener('click', () => startQuiz(true));
+    $('#quiz-finish').addEventListener('click', () => setMode('spell'));
     $('#letters').addEventListener('mouseover', event => {
       const button = event.target.closest('[data-letter-id]');
       if (!button || button.disabled || button.contains(event.relatedTarget)) return;
@@ -1384,15 +1800,7 @@
     $('#unit-grid').addEventListener('click', event => {
       const button = event.target.closest('[data-unit-index]');
       if (!button) return;
-      openUnit(Number(button.dataset.unitIndex));
-    });
-    $('#unit-grid').addEventListener('pointerover', event => {
-      const card = event.target.closest('.unit-node:not(.revision)');
-      if (card && !card.contains(event.relatedTarget)) playUnitScene(card);
-    });
-    $('#unit-grid').addEventListener('focusin', event => {
-      const card = event.target.closest('.unit-node:not(.revision)');
-      if (card) playUnitScene(card);
+      openUnit(Number(button.dataset.unitIndex), false);
     });
     $('#reward-grid').addEventListener('click', event => {
       const button = event.target.closest('[data-reward-id]');
@@ -1415,6 +1823,7 @@
       return;
     }
     loadState();
+    saveState();
     bindEvents();
     updateSummary();
     renderMap(true);

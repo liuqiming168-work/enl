@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#23384f">
   <title>刘劲英语 · 三年级上册</title>
   <link rel="icon" href="assets/openmoji/1F44B.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=20260915-2">
+  <link rel="stylesheet" href="styles.css?v=20260916-7">
 </head>
 <body>
   <div class="app-shell">
@@ -22,7 +22,7 @@
         </div>
         <button class="points-button" id="points-button" title="查看积分兑换">
           <img src="assets/openmoji/2B50.svg" alt="">
-          <strong id="points-total">340</strong><span>积分</span>
+          <strong id="points-total">0</strong><span>积分</span>
         </button>
       </div>
     </header>
@@ -39,6 +39,14 @@
         </div>
       </section>
 
+      <section class="unit-selector" aria-labelledby="unit-selector-title">
+        <header class="unit-selector-head">
+          <div><h2 id="unit-selector-title">学习单元</h2><p>人民教育出版社 · 三年级上册</p></div>
+          <strong id="unit-route-current"></strong>
+        </header>
+        <nav class="unit-grid" id="unit-grid" aria-label="选择学习单元"></nav>
+      </section>
+
       <nav class="mode-grid" aria-label="练习方式">
         <button class="mode spell active" data-mode="spell">
           <span><strong>拼单词</strong><small>Spell</small></span>
@@ -51,6 +59,10 @@
         <button class="mode speak" data-mode="speak">
           <span><strong>跟读检查</strong><small>Speak</small></span>
           <img src="assets/openmoji/1F4AC.svg" alt="">
+        </button>
+        <button class="mode quiz" data-mode="quiz">
+          <span><strong>单元测试</strong><small>Quiz</small></span>
+          <img src="assets/openmoji/2705.svg" alt="">
         </button>
       </nav>
 
@@ -133,6 +145,49 @@
             </div>
             <div class="actions"><button class="next" id="speak-next">下一句 →</button></div>
           </div>
+
+          <div class="work quiz-work" id="quiz-work" hidden>
+            <section class="quiz-intro" id="quiz-intro">
+              <span class="kicker" id="quiz-unit-label"></span>
+              <h2>单元小挑战</h2>
+              <p class="quiz-lead">每次随机生成 10 道题，检查词汇、句型和发音。每题只作答一次，没有倒计时。</p>
+              <div class="quiz-overview" aria-label="测验内容">
+                <span><b>5</b> 词汇</span><span><b>3</b> 句型</span><span><b>2</b> 跟读</span>
+              </div>
+              <div class="quiz-last-result" id="quiz-last-result" hidden></div>
+              <button class="quiz-primary" id="quiz-start">开始测试</button>
+            </section>
+
+            <section class="quiz-run" id="quiz-run" hidden>
+              <header class="quiz-progress-head">
+                <span id="quiz-progress-label">第 1 / 10 题</span>
+                <button id="quiz-exit">退出测试</button>
+              </header>
+              <div class="quiz-progress"><i id="quiz-progress-bar"></i></div>
+              <span class="quiz-type" id="quiz-type"></span>
+              <h2 id="quiz-prompt"></h2>
+              <p class="quiz-subprompt" id="quiz-subprompt"></p>
+              <button class="quiz-listen" id="quiz-listen" hidden>🔊 再听一次</button>
+              <div class="quiz-question" id="quiz-question"></div>
+              <div class="quiz-feedback" id="quiz-feedback" aria-live="polite"></div>
+              <div class="quiz-actions">
+                <button class="quiz-secondary" id="quiz-skip" hidden>网络问题，跳过本题</button>
+              </div>
+            </section>
+
+            <section class="quiz-result" id="quiz-result" hidden>
+              <div class="quiz-result-mark" id="quiz-result-mark">✓</div>
+              <span class="kicker">单元测试完成</span>
+              <h2 id="quiz-result-title"></h2>
+              <strong class="quiz-score" id="quiz-score"></strong>
+              <p id="quiz-result-note"></p>
+              <div class="quiz-dimensions" id="quiz-dimensions"></div>
+              <div class="quiz-result-actions">
+                <button class="quiz-secondary" id="quiz-retry" hidden>重做错题</button>
+                <button class="quiz-primary" id="quiz-finish">返回本单元</button>
+              </div>
+            </section>
+          </div>
         </div>
 
         <aside class="picker">
@@ -147,18 +202,10 @@
         </aside>
       </section>
 
-      <section class="curriculum" id="curriculum">
-        <header class="curriculum-head">
-          <div><h2>教材地图</h2><p>人民教育出版社 · 三年级上册</p></div>
-          <span class="book-badge">同步教材内容</span>
-        </header>
-        <div class="unit-grid" id="unit-grid"></div>
-      </section>
-
       <section class="reward-shop" id="reward-shop">
         <header class="reward-head">
           <div><h2>积分兑换站</h2><p>认真完成练习，攒积分换奖励</p></div>
-          <b><span id="reward-points">340</span> 积分可用</b>
+          <b><span id="reward-points">0</span> 积分可用</b>
         </header>
         <div class="reward-notice" id="reward-notice" hidden aria-live="polite"></div>
         <div class="reward-grid" id="reward-grid"></div>
@@ -180,6 +227,6 @@
     window.XFYUN_AUTH_ENDPOINT = 'https://liujin-n-signer-wdrtkmmavm.cn-hangzhou.fcapp.run';
   </script>
   <script src="xfyun-ise.js?v=20260915-2"></script>
-  <script src="app.js?v=20260915-2"></script>
+  <script src="app.js?v=20260916-7"></script>
 </body>
 </html>
