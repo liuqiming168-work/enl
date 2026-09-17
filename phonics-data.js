@@ -80,7 +80,6 @@ window.PHONEME_INFO = {
 
 window.PHONEME_AUDIO = {
   sarah: 'audio/phonics/sarah/',
-  zoom: 'audio/phonics/zoom/',
   buzzphonics: 'audio/phonics/buzzphonics/'
 };
 
@@ -90,7 +89,7 @@ window.BUZZ_PHONEME_FILES = {
   h: 'h.m4a', l: 'l.m4a', long_o: 'oa.m4a', long_i: 'igh.m4a', n: 'n.m4a',
   long_a: 'ai.m4a', m: 'm.m4a', f: 'f.m4a', r: 'r.m4a', short_e: 'e.m4a',
   d: 'd.m4a', g: 'g.m4a', short_oo: 'oo.m4a', s: 's.m4a', long_e: 'ee.m4a',
-  t: 't.m4a', ar: 'ar.m4a', short_a: 'a.m4a', ear: 'ear.m4a', ow: 'ow.m4a',
+  t: 't.m4a', ar: 'ar.m4a', short_a: 'a-pep.m4a', ear: 'ear.m4a', ow: 'ow.m4a',
   th: 'th.m4a', w: 'w.m4a', v: 'v.m4a', p: 'p.m4a', oy: 'oi.m4a', k: 'c.m4a',
   short_i: 'i.m4a', sh: 'sh.m4a', air: 'air.m4a', er: 'er.m4a', b: 'b.m4a',
   short_o: 'o.m4a', j: 'j.m4a', short_u: 'u.m4a', ks: 'x.m4a', y: 'y.m4a', z: 'z.m4a'

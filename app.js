@@ -14,6 +14,9 @@
   const $$ = selector => [...document.querySelectorAll(selector)];
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const POINTS_RESET_VERSION = 1;
+  const LEGACY_AUDIO_CACHE_NAME = 'liujin-english-audio-v1';
+  const audioElements = new Map();
+  let audioPlaybackRequest = 0;
 
   const unitMeta = [
     { id: 'Unit 1', title: 'Making friends', subtitle: '问候、介绍与友谊', icon: '1F44B', color: '#dcefe4', parts: ['Part A', 'Part B', 'Part C'] },
@@ -264,22 +267,67 @@
     return 'conversation.svg';
   }
 
-  function playText(text) {
-    stopRecognition(true);
+  function prepareAudio(file) {
+    if (!file) return null;
+    if (audioElements.has(file)) return audioElements.get(file);
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audio.src = file;
+    audio.load();
+    audioElements.set(file, audio);
+    return audio;
+  }
+
+  function playAudioFile(file, onPlaybackFailure = null, playbackRate = 1) {
+    const request = ++audioPlaybackRequest;
     if (state.audio) {
       state.audio.pause();
       state.audio = null;
     }
-    const pack = audioPacks[state.voice];
-    const file = pack && pack.files ? pack.files[text] : '';
-    if (file) {
-      const audio = new Audio(file);
+    try {
+      const audio = prepareAudio(file);
+      if (!audio || request !== audioPlaybackRequest) return;
       state.audio = audio;
-      audio.playbackRate = 1;
-      audio.play().catch(() => fallbackSpeech(text));
+      audio.currentTime = 0;
+      audio.preservesPitch = true;
+      audio.playbackRate = playbackRate;
+      const playback = audio.play();
+      if (playback?.catch) playback.catch(() => {
+        if (request === audioPlaybackRequest) onPlaybackFailure?.();
+      });
+    } catch (_) {
+      if (request === audioPlaybackRequest) onPlaybackFailure?.();
+    }
+  }
+
+  function unitAudioFiles(unitIndex = state.unit, voice = state.voice) {
+    const content = contentFor(unitIndex);
+    const pack = audioPacks[voice];
+    if (!pack?.files) return [];
+    const wordIndex = unitIndex === state.unit ? state.word : 0;
+    const sentenceIndex = unitIndex === state.unit ? state.sentence : 0;
+    const texts = [
+      content.words[wordIndex]?.[0],
+      content.sentences[sentenceIndex]?.[0],
+      content.words[(wordIndex + 1) % content.words.length]?.[0],
+      content.sentences[(sentenceIndex + 1) % content.sentences.length]?.[0]
+    ];
+    return [...new Set(texts.map(text => pack.files[text]).filter(Boolean))];
+  }
+
+  function preloadCurrentUnitAudio() {
+    unitAudioFiles().forEach(file => prepareAudio(file));
+  }
+
+  function playText(text) {
+    stopRecognition(true);
+    const pack = audioPacks[state.voice];
+    const file = pack?.files?.[text] || '';
+    if (file) {
+      playAudioFile(file);
       return;
     }
-    fallbackSpeech(text);
+    audioPlaybackRequest += 1;
   }
 
   function phonicsFor(item = currentWord()) {
@@ -302,20 +350,21 @@
       setTimeout(() => button.classList.remove('active'), 650);
     }
     if (sound === 'silent') return;
-    if (state.audio) state.audio.pause();
+    playAudioFile(phonemeFile(sound), onPlaybackFailure);
+  }
+
+  function phonemeFile(sound) {
+    if (!sound || sound === 'silent') return '';
     const buzzFile = buzzPhonemeFiles[sound];
     const base = phonemeAudio[state.voice] || phonemeAudio.sarah;
-    const source = buzzFile && phonemeAudio.buzzphonics
+    return buzzFile && phonemeAudio.buzzphonics
       ? `${phonemeAudio.buzzphonics}${buzzFile}`
-      : `${base}${sound}.wav`;
-    const audio = new Audio(source);
-    state.audio = audio;
-    try {
-      const playback = audio.play();
-      if (playback?.catch) playback.catch(() => onPlaybackFailure?.());
-    } catch (_) {
-      onPlaybackFailure?.();
-    }
+      : `${base}${sound}.m4a`;
+  }
+
+  function preloadCurrentWordPhonics(item = currentWord()) {
+    const sounds = spellingSounds[state.unit]?.[item.text.toLowerCase()] || [];
+    [...new Set(sounds.map(phonemeFile).filter(Boolean))].forEach(file => prepareAudio(file));
   }
 
   function spellingSound(item, index, selectedLetter) {
@@ -324,15 +373,6 @@
       return spellingSounds[state.unit]?.[item.text.toLowerCase()]?.[index] || baseLetterSounds[selectedLetter];
     }
     return baseLetterSounds[selectedLetter];
-  }
-
-  function fallbackSpeech(text) {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = .82;
-    window.speechSynthesis.speak(utterance);
   }
 
   function completionKey(mode, index, unit = state.unit) {
@@ -503,9 +543,11 @@
   function renderWord() {
     clearPracticeAnimations();
     const item = currentWord();
+    preloadCurrentUnitAudio();
     state.picked = Array(cleanLetters(item.text).length).fill(null);
     state.wordAttempts = 0;
     state.letterPool = makeLetterPool(item);
+    preloadCurrentWordPhonics(item);
     showObject(item);
     $('#word-count').textContent = `拼单词 · ${state.word + 1}/${wordItems().length}`;
     $('#word-feedback').textContent = '';
@@ -545,6 +587,7 @@
 
   function resetSentence() {
     clearPracticeAnimations();
+    preloadCurrentUnitAudio();
     const tokens = sentenceTokens();
     state.sentencePicked = Array(tokens.length).fill(null);
     state.sentenceAttempts = 0;
@@ -597,6 +640,7 @@
   function renderSpeak() {
     const wordMode = state.speakKind === 'word';
     const item = currentSpeakItem();
+    preloadCurrentUnitAudio();
     wordMode ? showObject(item) : showScene(item);
     $('#speak-work').classList.toggle('word-speak', wordMode);
     $$('.speak-kind-switch [data-speak-kind]').forEach(button => button.classList.toggle('active', button.dataset.speakKind === state.speakKind));
@@ -1102,6 +1146,7 @@
     updateSummary();
     renderMap();
     setMode(state.mode);
+    preloadCurrentUnitAudio();
     if (scrollToPractice) $('#learning-stage').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
@@ -1619,6 +1664,7 @@
       state.voice = button.dataset.voice;
       saveState();
       updateSummary();
+      preloadCurrentUnitAudio();
       const quizItem = state.mode === 'quiz' ? quizQuestion()?.item : null;
       playText(quizItem?.text || (state.mode === 'spell' ? currentWord().text : state.mode === 'speak' ? currentSpeakItem().text : currentSentence().text));
     });
@@ -1818,6 +1864,7 @@
   }
 
   function init() {
+    if ('caches' in window) caches.delete(LEGACY_AUDIO_CACHE_NAME).catch(() => {});
     if (!textbook.length) {
       document.body.innerHTML = '<p style="padding:30px">教材内容加载失败，请刷新页面。</p>';
       return;
@@ -1829,6 +1876,7 @@
     renderMap(true);
     renderRewards();
     setMode('spell');
+    preloadCurrentUnitAudio();
   }
 
   init();
